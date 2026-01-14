@@ -1,0 +1,48 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "offline": "You are currently offline",
+    "online": "You are back online",
+    "search": "Search",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "back": "Back",
+    "language": "Language"
+  },
+  "nav": {
+    "chat": "Chat",
+    "settings": "Settings",
+    "about": "About"
+  },
+  "chat": {
+    "title": "Leaf AI",
+    "tagline": "Your private AI assistant",
+    "placeholder": "Type your message...",
+    "thinking": "Thinking...",
+    "ready": "Ready to help",
+    "newChat": "New chat"
+  },
+  "settings": {
+    "title": "Settings",
+    "modelStatus": "Model Status",
+    "modelReady": "Model ready",
+    "modelLoading": "Loading model...",
+    "noModel": "No model loaded",
+    "downloadModel": "Download Model",
+    "storageManagement": "Storage Management"
+  },
+  "about": {
+    "title": "About Leaf AI",
+    "mission": "Our Mission",
+    "principles": "Core Principles",
+    "technology": "Technology",
+    "requirements": "Requirements"
+  },
+  "pwa": {
+    "installPrompt": "Install Leaf AI for offline access",
+    "install": "Install",
+    "later": "Maybe Later"
+  }
+}

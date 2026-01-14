@@ -1,0 +1,48 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "offline": "Estás sin conexión",
+    "online": "Estás de vuelta en línea",
+    "search": "Buscar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "back": "Atrás",
+    "language": "Idioma"
+  },
+  "nav": {
+    "chat": "Chat",
+    "settings": "Configuración",
+    "about": "Acerca de"
+  },
+  "chat": {
+    "title": "Leaf AI",
+    "tagline": "Tu asistente de IA privado",
+    "placeholder": "Escribe tu mensaje...",
+    "thinking": "Pensando...",
+    "ready": "Listo para ayudar",
+    "newChat": "Nuevo chat"
+  },
+  "settings": {
+    "title": "Configuración",
+    "modelStatus": "Estado del Modelo",
+    "modelReady": "Modelo listo",
+    "modelLoading": "Cargando modelo...",
+    "noModel": "Ningún modelo cargado",
+    "downloadModel": "Descargar Modelo",
+    "storageManagement": "Gestión de Almacenamiento"
+  },
+  "about": {
+    "title": "Acerca de Leaf AI",
+    "mission": "Nuestra Misión",
+    "principles": "Principios Fundamentales",
+    "technology": "Tecnología",
+    "requirements": "Requisitos"
+  },
+  "pwa": {
+    "installPrompt": "Instala Leaf AI para acceso sin conexión",
+    "install": "Instalar",
+    "later": "Quizás Después"
+  }
+}
