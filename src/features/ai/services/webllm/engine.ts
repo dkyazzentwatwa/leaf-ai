@@ -22,6 +22,17 @@ export const AVAILABLE_MODELS = {
     performance: '2-3 tok/sec on iPhone 17 Pro',
     quantization: 'q4f16_1', // 4-bit weights, f16 activations
   },
+  'gemma-3-1b-it-q0f16-MLC': {
+    name: 'Gemma 3 1B (q0)',
+    description: 'Google\'s 2-bit ultra-compressed model for iOS',
+    size: '~150MB',
+    recommended: false,
+    minRAM: 1,
+    iosOnly: true,
+    maxBufferSizeMB: 250,
+    performance: '2-4 tok/sec on iPhone 17 Pro',
+    quantization: 'q0f16', // 2-bit weights, f16 activations (ultra-compressed)
+  },
   'TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC': {
     name: 'TinyLlama 1.1B (q4)',
     description: 'Small 4-bit model for newer iPhones',
@@ -44,6 +55,17 @@ export const AVAILABLE_MODELS = {
     iosOnly: false,
     maxBufferSizeMB: 2000,
     performance: '3-7 tok/sec',
+    quantization: 'q4f16_1',
+  },
+  'gemma-3-12b-it-q4f16_1-MLC': {
+    name: 'Gemma 3 12B (q4)',
+    description: 'Google\'s high-quality 4-bit model (Desktop/Android)',
+    size: '~7GB',
+    recommended: false,
+    minRAM: 8,
+    iosOnly: false,
+    maxBufferSizeMB: 7000,
+    performance: '2-5 tok/sec',
     quantization: 'q4f16_1',
   },
   'Phi-3.5-mini-instruct-q4f16_1-MLC': {
