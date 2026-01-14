@@ -164,7 +164,7 @@ export function About() {
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
                   <div>
-                    <strong className="text-foreground">SmolLM2 135M (q4)</strong> - ~130MB
+                    <strong className="text-foreground">SmolLM2 135M (q0)</strong> - ~360MB
                     <p className="text-xs mt-0.5">
                       {lang === 'es'
                         ? 'Ultra compacto, recomendado para iOS. 2-3 tok/seg en iPhone 17 Pro.'
@@ -175,22 +175,33 @@ export function About() {
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
                   <div>
-                    <strong className="text-foreground">Gemma 3 1B (q0)</strong> - ~150MB
+                    <strong className="text-foreground">SmolLM2 360M (q4)</strong> - ~376MB
                     <p className="text-xs mt-0.5">
                       {lang === 'es'
-                        ? 'Modelo de Google con compresión de 2 bits. 2-4 tok/seg en iPhone 17 Pro.'
-                        : 'Google\'s 2-bit compressed model. 2-4 tok/sec on iPhone 17 Pro.'}
+                        ? 'Modelo pequeño de 4 bits para iOS. 2-3 tok/seg en iPhone 17 Pro.'
+                        : 'Small 4-bit model for iOS. 2-3 tok/sec on iPhone 17 Pro.'}
                     </p>
                   </div>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
                   <div>
-                    <strong className="text-foreground">TinyLlama 1.1B (q4)</strong> - ~350MB
+                    <strong className="text-foreground">TinyLlama 1.1B (q4)</strong> - ~697MB
                     <p className="text-xs mt-0.5">
                       {lang === 'es'
                         ? 'Modelo compacto para iPhones más nuevos. 1-2 tok/seg.'
                         : 'Compact model for newer iPhones. 1-2 tok/sec.'}
+                    </p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <div>
+                    <strong className="text-foreground">Qwen 2.5 0.5B (q4)</strong> - ~945MB
+                    <p className="text-xs mt-0.5">
+                      {lang === 'es'
+                        ? 'Mejor calidad para iOS (avanzado). 1-2 tok/seg en iPhone 17 Pro.'
+                        : 'Best quality iOS model (advanced). 1-2 tok/sec on iPhone 17 Pro.'}
                     </p>
                   </div>
                 </li>
@@ -206,7 +217,7 @@ export function About() {
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
                   <div>
-                    <strong className="text-foreground">Llama 3.2 3B (q4)</strong> - ~2GB
+                    <strong className="text-foreground">Llama 3.2 3B (q4)</strong> - ~2.3GB
                     <p className="text-xs mt-0.5">
                       {lang === 'es'
                         ? 'Mejor calidad, recomendado para escritorio. 3-7 tok/seg.'
@@ -217,11 +228,22 @@ export function About() {
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
                   <div>
-                    <strong className="text-foreground">Gemma 3 12B (q4)</strong> - ~7GB
+                    <strong className="text-foreground">Gemma 2 2B (q4)</strong> - ~1.9GB
                     <p className="text-xs mt-0.5">
                       {lang === 'es'
-                        ? 'Modelo de alta calidad de Google. 2-5 tok/seg.'
-                        : 'High-quality Google model. 2-5 tok/sec.'}
+                        ? 'Modelo eficiente de Google. 3-6 tok/seg.'
+                        : 'Google\'s efficient model. 3-6 tok/sec.'}
+                    </p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <div>
+                    <strong className="text-foreground">Llama 3.2 1B (q4)</strong> - ~1.1GB
+                    <p className="text-xs mt-0.5">
+                      {lang === 'es'
+                        ? 'Llama compacto. 5-8 tok/seg.'
+                        : 'Compact Llama model. 5-8 tok/sec.'}
                     </p>
                   </div>
                 </li>
@@ -254,8 +276,8 @@ export function About() {
               <p className="text-xs sm:text-sm">
                 <strong className="text-foreground">{lang === 'es' ? 'Nota:' : 'Note:'}</strong>{' '}
                 {lang === 'es'
-                  ? 'Todos los modelos usan cuantización de 4 bits (q4f16) o 2 bits (q0f16) para máxima eficiencia. Los modelos se descargan una vez y se almacenan en caché localmente.'
-                  : 'All models use 4-bit (q4f16) or 2-bit (q0f16) quantization for maximum efficiency. Models download once and cache locally.'}
+                  ? 'Todos los modelos usan cuantización de 4 bits (q4f16) o 2 bits (q0f16) para máxima eficiencia. Los modelos se descargan una vez y se almacenan en caché localmente. El modelo Qwen 0.5B es experimental en iOS y puede causar problemas de memoria en dispositivos más antiguos.'
+                  : 'All models use 4-bit (q4f16) or 2-bit (q0f16) quantization for maximum efficiency. Models download once and cache locally. The Qwen 0.5B model is experimental on iOS and may cause memory issues on older devices.'}
               </p>
             </div>
           </div>
@@ -349,7 +371,7 @@ export function About() {
                   • <strong>Desktop:</strong> {lang === 'es' ? 'GPU dedicada o integrada (AMD/NVIDIA/Intel)' : 'Dedicated or integrated GPU (AMD/NVIDIA/Intel)'}
                 </li>
                 <li>
-                  • <strong>{lang === 'es' ? 'Almacenamiento:' : 'Storage:'}</strong> {lang === 'es' ? '150MB-7GB dependiendo del modelo' : '150MB-7GB depending on model'}
+                  • <strong>{lang === 'es' ? 'Almacenamiento:' : 'Storage:'}</strong> {lang === 'es' ? '360MB-2.3GB (360MB-945MB en iOS)' : '360MB-2.3GB (360MB-945MB on iOS)'}
                 </li>
                 <li>
                   • <strong>RAM:</strong> {lang === 'es' ? '4GB+ recomendado (2GB mínimo para iOS)' : '4GB+ recommended (2GB minimum for iOS)'}
