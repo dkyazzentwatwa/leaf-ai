@@ -8,8 +8,8 @@
 
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { workerEngine } from '../services/webllm/workerEngine'
-import type { ModelId, ChatMessage, GenerateOptions } from '../services/webllm/engine'
+import { unifiedEngine, type UnifiedModelId } from '../services/unifiedEngine'
+import type { ChatMessage, GenerateOptions } from '../services/webllm/engine'
 import { getSystemPrompt, type AssistantType } from '../services/webllm/prompts'
 import {
   useAIStore,
@@ -50,19 +50,19 @@ export function useWebLLM(options: UseWebLLMOptions = {}) {
   const updateLastAssistantMessage = useAIStore((s) => s.updateLastAssistantMessage)
 
   /**
-   * Check if WebGPU is available
+   * Check if AI is supported (WebGPU or WebGL/WASM fallback)
    */
   const checkSupport = useCallback(async () => {
-    const result = await workerEngine.checkWebGPUSupport()
-    return result
+    const engineInfo = await unifiedEngine.detectEngine()
+    return { supported: true, engine: engineInfo.type }
   }, [])
 
   /**
-   * Load the AI model (runs in Web Worker)
+   * Load the AI model (runs in Web Worker or Transformers.js)
    */
   const loadModel = useCallback(
-    async (modelId?: ModelId) => {
-      const model = modelId || preferredModel
+    async (modelId?: UnifiedModelId) => {
+      const model = (modelId || preferredModel) as UnifiedModelId
 
       const start = typeof performance !== 'undefined' ? performance.now() : Date.now()
 
@@ -70,7 +70,7 @@ export function useWebLLM(options: UseWebLLMOptions = {}) {
       setModelStatus('downloading')
 
       try {
-        await workerEngine.loadModel(model, (progress) => {
+        await unifiedEngine.loadModel(model, (progress) => {
           setModelProgress(progress)
 
           if (progress.stage === 'downloading') {
@@ -166,7 +166,7 @@ export function useWebLLM(options: UseWebLLMOptions = {}) {
           }
         }
 
-        const response = await workerEngine.generate(messages, generateOptions)
+        const response = await unifiedEngine.generate(messages, generateOptions)
 
         // If not streaming, update with full response
         if (!stream) {
@@ -247,7 +247,7 @@ export function useWebLLM(options: UseWebLLMOptions = {}) {
           }
         }
 
-        const response = await workerEngine.generate(messages, generateOptions)
+        const response = await unifiedEngine.generate(messages, generateOptions)
 
         if (!stream) {
           updateLastAssistantMessage(conversationId, response)
@@ -270,21 +270,21 @@ export function useWebLLM(options: UseWebLLMOptions = {}) {
    * Stop streaming generation
    */
   const stopGeneration = useCallback(() => {
-    workerEngine.stopGeneration()
+    unifiedEngine.stopGeneration()
   }, [])
 
   /**
    * Reset the chat context
    */
   const resetChat = useCallback(async () => {
-    await workerEngine.resetChat()
+    await unifiedEngine.resetChat()
   }, [])
 
   /**
    * Unload the model to free memory
    */
   const unloadModel = useCallback(async () => {
-    await workerEngine.unload()
+    await unifiedEngine.unload()
     setModelStatus('idle')
     setCurrentModel(null)
     setModelProgress(null)
@@ -293,8 +293,9 @@ export function useWebLLM(options: UseWebLLMOptions = {}) {
   /**
    * Get performance stats
    */
-  const getStats = useCallback(async () => {
-    return workerEngine.getStats()
+  const getStats = useCallback(async (): Promise<{ tokensPerSecond: number } | null> => {
+    // Stats not available for Transformers.js yet
+    return null
   }, [])
 
   return {

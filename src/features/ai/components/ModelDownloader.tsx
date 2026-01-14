@@ -10,13 +10,16 @@ import {
   Download,
   Cpu,
   CheckCircle2,
-  AlertCircle,
   Loader2,
   Info,
   Trash2,
+  Zap,
+  AlertCircle,
 } from 'lucide-react'
 import { useWebLLM } from '../hooks/useWebLLM'
-import { AVAILABLE_MODELS, type ModelId } from '../services/webllm/engine'
+import { AVAILABLE_MODELS } from '../services/webllm/engine'
+import type { TransformersModelId } from '../services/transformers/engine'
+import { unifiedEngine, type UnifiedModelId } from '../services/unifiedEngine'
 import { useAIStore } from '../stores/aiStore'
 import { cn } from '@/utils/cn'
 
@@ -25,8 +28,8 @@ interface ModelDownloaderProps {
   compact?: boolean
 }
 
-const identifyModel = (cacheName: string, urls: string[]): ModelId | null => {
-  const modelPatterns = Object.keys(AVAILABLE_MODELS) as ModelId[]
+const identifyModel = (cacheName: string, urls: string[]): UnifiedModelId | null => {
+  const modelPatterns = Object.keys(AVAILABLE_MODELS) as UnifiedModelId[]
 
   for (const pattern of modelPatterns) {
     const shortName = pattern.replace('-MLC', '').toLowerCase()
@@ -44,19 +47,22 @@ const identifyModel = (cacheName: string, urls: string[]): ModelId | null => {
 }
 
 export function ModelDownloader({ onModelReady, compact = false }: ModelDownloaderProps) {
-  const [webGPUSupported, setWebGPUSupported] = useState<boolean | null>(null)
-  const [webGPUError, setWebGPUError] = useState<string | null>(null)
+  const [engineInfo, setEngineInfo] = useState<{
+    type: 'webllm' | 'transformers' | null
+    name: string
+    description: string
+  } | null>(null)
+  const [availableModels, setAvailableModels] = useState<Record<string, any>>({})
   const preferredModel = useAIStore((s) => s.preferredModel)
   const setPreferredModel = useAIStore((s) => s.setPreferredModel)
-  const [selectedModel, setSelectedModel] = useState<ModelId>(preferredModel)
-  const [cachedModels, setCachedModels] = useState<Set<ModelId>>(new Set())
+  const [selectedModel, setSelectedModel] = useState<UnifiedModelId>(preferredModel as UnifiedModelId)
+  const [cachedModels, setCachedModels] = useState<Set<UnifiedModelId>>(new Set())
 
   const {
     isModelReady,
     isModelLoading,
     modelProgress,
     modelError,
-    checkSupport,
     loadModel,
     unloadModel,
   } = useWebLLM()
@@ -71,7 +77,7 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
       }
 
       const cacheNames = await caches.keys()
-      const found = new Set<ModelId>()
+      const found = new Set<UnifiedModelId>()
 
       for (const cacheName of cacheNames) {
         if (!cacheName.includes('webllm') && !cacheName.includes('mlc') && !cacheName.includes('tvmjs')) {
@@ -94,22 +100,28 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
     }
   }, [])
 
-  // Check WebGPU support on mount
+  // Detect best engine on mount
   useEffect(() => {
-    checkSupport().then((result) => {
-      setWebGPUSupported(result.supported)
-      if (!result.supported) {
-        setWebGPUError(result.error || 'WebGPU not supported')
+    unifiedEngine.detectEngine().then(async (info) => {
+      setEngineInfo(info)
+      const models = await unifiedEngine.getAvailableModels()
+      setAvailableModels(models)
+
+      // Set default model based on engine
+      if (info.type === 'transformers') {
+        const defaultModel = 'Xenova/TinyLlama-1.1B-Chat-v1.0' as TransformersModelId
+        setSelectedModel(defaultModel)
+        setPreferredModel(defaultModel)
       }
     })
-  }, [checkSupport])
+  }, [])
 
   useEffect(() => {
     loadCachedModels()
   }, [loadCachedModels])
 
   useEffect(() => {
-    setSelectedModel(preferredModel)
+    setSelectedModel(preferredModel as UnifiedModelId)
   }, [preferredModel])
 
   // Notify when model is ready
@@ -129,7 +141,7 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
     }
   }
 
-  const handleSelectModel = (modelId: ModelId) => {
+  const handleSelectModel = (modelId: UnifiedModelId) => {
     setSelectedModel(modelId)
     setPreferredModel(modelId)
   }
@@ -138,46 +150,8 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
     await unloadModel()
   }
 
-  // WebGPU not supported
-  if (webGPUSupported === false) {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-
-    return (
-      <div className={cn(
-        'border border-destructive/50 bg-destructive/10 rounded-lg p-3 sm:p-4',
-        compact && 'p-2 sm:p-3'
-      )}>
-        <div className="flex items-start gap-2 sm:gap-3">
-          <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-destructive mt-0.5 flex-shrink-0" />
-          <div>
-            <h3 className="font-semibold text-destructive text-sm sm:text-base">AI Features Unavailable</h3>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-              {webGPUError || 'Your browser does not support WebGPU, which is required for local AI.'}
-            </p>
-            {isIOS && (
-              <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-                <strong>iOS users:</strong> Please use this app on a desktop/laptop computer with Chrome or Edge.
-              </p>
-            )}
-            {isMobile && !isIOS && (
-              <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-                <strong>Mobile users:</strong> Try Chrome for Android, or use a desktop browser for best results.
-              </p>
-            )}
-            {!isMobile && (
-              <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-                Please use <strong>Chrome 113+</strong>, <strong>Edge 113+</strong>, or another browser with WebGPU support.
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Loading state for WebGPU check
-  if (webGPUSupported === null) {
+  // Loading state for engine detection
+  if (!engineInfo) {
     return (
       <div className={cn('border border-border rounded-lg p-3 sm:p-4', compact && 'p-2 sm:p-3')}>
         <div className="flex items-center gap-2 sm:gap-3">
@@ -190,7 +164,7 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
 
   // Model is ready
   if (isModelReady && currentModel) {
-    const modelInfo = AVAILABLE_MODELS[currentModel]
+    const modelInfo = availableModels[currentModel]
 
     if (compact) {
       return (
@@ -316,11 +290,26 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
         </div>
       </div>
 
+      {/* Engine info */}
+      {engineInfo && engineInfo.type === 'transformers' && (
+        <div className="flex items-start gap-2 px-3 py-2 bg-green-500/10 border border-green-500/30 rounded-md">
+          <Zap className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-xs sm:text-sm text-green-700 dark:text-green-300 font-medium">
+              iOS/Mobile Mode Active
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Using WebGL/WebAssembly for local AI. Works on all devices including iOS!
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Model selection */}
       <div className="space-y-2">
         <label className="text-sm font-medium">Select Model</label>
         <div className="space-y-2">
-          {(Object.entries(AVAILABLE_MODELS) as [ModelId, typeof AVAILABLE_MODELS[ModelId]][]).map(
+          {(Object.entries(availableModels) as [UnifiedModelId, any][]).map(
             ([id, info]) => (
               <label
                 key={id}
@@ -380,7 +369,7 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
         className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
       >
         <Download className="h-5 w-5" />
-        {actionLabel} {AVAILABLE_MODELS[selectedModel].name}
+        {actionLabel} {availableModels[selectedModel]?.name || 'Model'}
       </button>
 
       {/* Privacy notice */}

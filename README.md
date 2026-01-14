@@ -26,6 +26,15 @@ Privacy-first activist resource platform for immigration rights, digital securit
 - Node.js 18+
 - npm or yarn
 
+### Browser Compatibility
+
+For the best experience with AI features:
+- **Recommended**: Chrome 113+, Edge 113+, or Brave (latest)
+- **Supported**: Any WebGPU-compatible browser
+- **iOS/Mobile**: Local AI not yet available (cloud AI mode coming soon)
+
+See [WEBGPU_COMPATIBILITY.md](WEBGPU_COMPATIBILITY.md) for full compatibility details.
+
 ### Installation
 
 ```bash

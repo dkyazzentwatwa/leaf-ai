@@ -22,19 +22,6 @@ class WorkerEngine {
    * Check if browser/platform is supported
    */
   private checkBrowserSupport(): { supported: boolean; reason?: string } {
-    // Check for iOS Safari
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
-
-    if (isIOS && isSafari) {
-      // iOS Safari doesn't support WebGPU yet
-      const iosVersion = navigator.userAgent.match(/OS (\d+)_/)?.[1]
-      return {
-        supported: false,
-        reason: `iOS Safari doesn't support WebGPU yet. Please use Chrome or a desktop browser. (iOS ${iosVersion || 'version unknown'})`
-      }
-    }
-
     // Check for Web Workers support
     if (typeof Worker === 'undefined') {
       return {
@@ -164,39 +151,36 @@ class WorkerEngine {
    * Check WebGPU support directly (without worker)
    */
   private async checkWebGPUDirectly(): Promise<{ supported: boolean; error?: string }> {
-    // Check for iOS Safari first
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
-
-    if (isIOS) {
-      const iosVersion = navigator.userAgent.match(/OS (\d+)_/)?.[1]
-      return {
-        supported: false,
-        error: `iOS doesn't support WebGPU yet. Please use a desktop browser. (iOS ${iosVersion || 'version unknown'})`
-      }
-    }
-
-    if (isSafari && !isIOS) {
-      // Desktop Safari might work in newer versions
-      const safariVersion = navigator.userAgent.match(/Version\/(\d+)/)?.[1]
-      if (safariVersion && parseInt(safariVersion) < 17) {
-        return {
-          supported: false,
-          error: 'Safari requires version 17 or later for WebGPU support. Please update Safari or use Chrome.'
-        }
-      }
-    }
 
     // Check for WebGPU API
     const nav = navigator as Navigator & { gpu?: GPU }
     if (!nav.gpu) {
+      // Provide helpful error messages based on platform
+      if (isIOS) {
+        return {
+          supported: false,
+          error: 'WebGPU is not yet available on your iOS version. You can use cloud AI mode instead, or try Chrome 113+ on desktop.'
+        }
+      }
+
+      if (isSafari) {
+        const safariVersion = navigator.userAgent.match(/Version\/(\d+)/)?.[1]
+        return {
+          supported: false,
+          error: `Safari ${safariVersion || ''} doesn't support WebGPU yet. Please use Chrome 113+, Edge 113+, or try cloud AI mode.`
+        }
+      }
+
       return {
         supported: false,
-        error: 'WebGPU is not supported in this browser. Please use Chrome 113+, Edge 113+, or a recent desktop browser.'
+        error: 'WebGPU is not supported in this browser. Please use Chrome 113+, Edge 113+, or try cloud AI mode.'
       }
     }
 
     try {
+      // Try to request adapter with timeout
       const adapter = await Promise.race([
         nav.gpu.requestAdapter(),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000))
@@ -205,7 +189,7 @@ class WorkerEngine {
       if (!adapter) {
         return {
           supported: false,
-          error: 'No WebGPU adapter found. Your device may not support WebGPU.'
+          error: 'No WebGPU adapter found. Your device GPU may not be supported. Try cloud AI mode instead.'
         }
       }
 
@@ -213,7 +197,7 @@ class WorkerEngine {
     } catch (e) {
       return {
         supported: false,
-        error: `WebGPU initialization failed: ${e instanceof Error ? e.message : 'Unknown error'}`
+        error: `WebGPU initialization failed: ${e instanceof Error ? e.message : 'Unknown error'}. Try cloud AI mode instead.`
       }
     }
   }
