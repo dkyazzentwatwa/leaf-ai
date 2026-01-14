@@ -8,9 +8,21 @@
 import { pipeline, env } from '@xenova/transformers'
 import type { ChatMessage } from '../webllm/engine'
 
-// Configure Transformers.js
+// Configure Transformers.js for iOS compatibility
 env.allowLocalModels = false
 env.allowRemoteModels = true
+env.useBrowserCache = true
+
+// Detect iOS
+const isIOS = typeof navigator !== 'undefined' &&
+  (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
+
+if (isIOS) {
+  console.log('[Transformers] Configuring for iOS compatibility - using single-threaded WASM')
+  // Use single-threaded WASM on iOS (multi-threading can cause crashes)
+  env.backends.onnx.wasm.numThreads = 1
+}
 
 export type TransformersModelId =
   | 'Xenova/Phi-1_5-quantized'
@@ -66,29 +78,61 @@ class TransformersEngine {
     onProgress?: (progress: { loaded: number; total: number; status: string }) => void
   ): Promise<void> {
     if (this.currentModel === modelId && this.pipe) {
+      console.log('[Transformers] Model already loaded:', modelId)
       return
     }
 
+    console.log('[Transformers] Loading model:', modelId)
+
     try {
-      // Create text generation pipeline
-      this.pipe = await pipeline('text-generation', modelId, {
-        progress_callback: (data: any) => {
-          if (onProgress && data.status) {
-            const progress = {
-              loaded: data.loaded || 0,
-              total: data.total || 1,
-              status: data.status,
+      // Notify start
+      if (onProgress) {
+        onProgress({ loaded: 0, total: 100, status: 'Initializing model...' })
+      }
+
+      // Create text generation pipeline with error handling
+      this.pipe = await Promise.race([
+        pipeline('text-generation', modelId, {
+          progress_callback: (data: any) => {
+            console.log('[Transformers] Progress:', data)
+            if (onProgress && data.status) {
+              const progress = {
+                loaded: data.loaded || 0,
+                total: data.total || 1,
+                status: data.status,
+              }
+              onProgress(progress)
             }
-            onProgress(progress)
-          }
-        },
-      })
+          },
+        }),
+        // Timeout after 5 minutes
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Model loading timeout')), 300000)
+        ),
+      ])
 
       this.currentModel = modelId
+      console.log('[Transformers] Model loaded successfully:', modelId)
+
+      if (onProgress) {
+        onProgress({ loaded: 100, total: 100, status: 'Model ready!' })
+      }
     } catch (error) {
+      console.error('[Transformers] Failed to load model:', error)
       this.pipe = null
       this.currentModel = null
-      throw error
+
+      // Provide helpful error messages
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      if (errorMessage.includes('timeout')) {
+        throw new Error('Model loading timed out. Please check your internet connection.')
+      } else if (errorMessage.includes('memory') || errorMessage.includes('SIMD')) {
+        throw new Error('Not enough memory to load this model. Try a smaller model.')
+      } else if (errorMessage.includes('fetch') || errorMessage.includes('network')) {
+        throw new Error('Network error while downloading model. Please check your connection.')
+      } else {
+        throw new Error(`Failed to load model: ${errorMessage}`)
+      }
     }
   }
 
@@ -99,39 +143,56 @@ class TransformersEngine {
 
     const { temperature = 0.7, maxTokens = 512, onToken } = options
 
-    // Format messages for the model
-    const prompt = this.formatMessages(messages)
+    console.log('[Transformers] Generating response with', messages.length, 'messages')
 
-    if (onToken) {
-      // Streaming generation
-      let fullText = ''
-      const result = await this.pipe(prompt, {
-        temperature,
-        max_new_tokens: maxTokens,
-        do_sample: true,
-        top_k: 50,
-        top_p: 0.95,
-        callback_function: (output: any) => {
-          const newText = output[0].generated_text.slice(fullText.length)
-          if (newText) {
-            fullText = output[0].generated_text
-            onToken(newText)
-          }
-        },
-      })
+    try {
+      // Format messages for the model
+      const prompt = this.formatMessages(messages)
 
-      return result[0].generated_text
-    } else {
-      // Non-streaming generation
-      const result = await this.pipe(prompt, {
-        temperature,
-        max_new_tokens: maxTokens,
-        do_sample: true,
-        top_k: 50,
-        top_p: 0.95,
-      })
+      if (onToken) {
+        // Streaming generation
+        let fullText = ''
+        const result = await this.pipe(prompt, {
+          temperature,
+          max_new_tokens: maxTokens,
+          do_sample: true,
+          top_k: 50,
+          top_p: 0.95,
+          callback_function: (output: any) => {
+            try {
+              const newText = output[0].generated_text.slice(fullText.length)
+              if (newText) {
+                fullText = output[0].generated_text
+                onToken(newText)
+              }
+            } catch (error) {
+              console.error('[Transformers] Streaming error:', error)
+            }
+          },
+        })
 
-      return result[0].generated_text
+        return result[0].generated_text
+      } else {
+        // Non-streaming generation
+        const result = await this.pipe(prompt, {
+          temperature,
+          max_new_tokens: maxTokens,
+          do_sample: true,
+          top_k: 50,
+          top_p: 0.95,
+        })
+
+        return result[0].generated_text
+      }
+    } catch (error) {
+      console.error('[Transformers] Generation failed:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+
+      if (errorMessage.includes('memory')) {
+        throw new Error('Out of memory during generation. Try reducing message length.')
+      } else {
+        throw new Error(`Generation failed: ${errorMessage}`)
+      }
     }
   }
 

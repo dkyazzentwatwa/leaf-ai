@@ -26,6 +26,19 @@ class UnifiedEngine {
   private webGPUChecked = false
 
   /**
+   * Detect if running on iOS/iPad
+   */
+  private isIOS(): boolean {
+    if (typeof navigator === 'undefined') return false
+
+    const ua = navigator.userAgent
+    const isIOSUA = /iPad|iPhone|iPod/.test(ua)
+    const isIPadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1
+
+    return isIOSUA || isIPadOS
+  }
+
+  /**
    * Detect the best available engine
    */
   async detectEngine(): Promise<EngineInfo> {
@@ -33,28 +46,51 @@ class UnifiedEngine {
       return this.getEngineInfo(this.detectedEngine)
     }
 
-    // Check WebGPU support
-    const webGPUResult = await workerEngine.checkWebGPUSupport()
+    console.log('[UnifiedEngine] Starting engine detection...')
 
-    if (webGPUResult.supported) {
-      this.detectedEngine = 'webllm'
+    // CRITICAL: Skip WebGPU check on iOS to prevent crashes
+    if (this.isIOS()) {
+      console.log('[UnifiedEngine] iOS detected - using Transformers.js')
+      this.detectedEngine = 'transformers'
       this.webGPUChecked = true
       return {
-        type: 'webllm',
+        type: 'transformers',
         supported: true,
-        name: 'WebLLM (WebGPU)',
-        description: 'Hardware-accelerated local AI using WebGPU. Fastest performance.',
+        name: 'Transformers.js (WebGL/WASM)',
+        description: 'Local AI optimized for iOS using WebGL/WebAssembly.',
       }
     }
 
+    // For non-iOS, check WebGPU support safely
+    try {
+      console.log('[UnifiedEngine] Checking WebGPU support...')
+      const webGPUResult = await workerEngine.checkWebGPUSupport()
+
+      if (webGPUResult.supported) {
+        console.log('[UnifiedEngine] WebGPU supported - using WebLLM')
+        this.detectedEngine = 'webllm'
+        this.webGPUChecked = true
+        return {
+          type: 'webllm',
+          supported: true,
+          name: 'WebLLM (WebGPU)',
+          description: 'Hardware-accelerated local AI using WebGPU. Fastest performance.',
+        }
+      }
+    } catch (error) {
+      console.warn('[UnifiedEngine] WebGPU check failed:', error)
+      // Fall through to Transformers.js
+    }
+
     // Fallback to Transformers.js
+    console.log('[UnifiedEngine] Using Transformers.js fallback')
     this.detectedEngine = 'transformers'
     this.webGPUChecked = true
     return {
       type: 'transformers',
       supported: true,
       name: 'Transformers.js (WebGL/WASM)',
-      description: 'Local AI using WebGL or WebAssembly. Works on iOS and all devices.',
+      description: 'Local AI using WebGL or WebAssembly. Works on all devices.',
     }
   }
 
@@ -85,27 +121,38 @@ class UnifiedEngine {
     modelId: UnifiedModelId,
     onProgress?: (progress: any) => void
   ): Promise<void> {
-    const engineInfo = await this.detectEngine()
+    console.log('[UnifiedEngine] Loading model:', modelId)
 
-    if (engineInfo.type === 'webllm') {
-      // Use WebLLM
-      await workerEngine.loadModel(modelId as ModelId, onProgress)
-    } else {
-      // Use Transformers.js
-      await transformersEngine.loadModel(modelId as TransformersModelId, (progress) => {
-        if (onProgress) {
-          // Convert to WebLLM-style progress
-          const percent = progress.total > 0
-            ? Math.round((progress.loaded / progress.total) * 100)
-            : 0
+    try {
+      const engineInfo = await this.detectEngine()
 
-          onProgress({
-            stage: progress.status.includes('download') ? 'downloading' : 'loading',
-            progress: percent,
-            text: progress.status,
-          })
-        }
-      })
+      if (engineInfo.type === 'webllm') {
+        // Use WebLLM
+        console.log('[UnifiedEngine] Using WebLLM engine')
+        await workerEngine.loadModel(modelId as ModelId, onProgress)
+      } else {
+        // Use Transformers.js
+        console.log('[UnifiedEngine] Using Transformers.js engine')
+        await transformersEngine.loadModel(modelId as TransformersModelId, (progress) => {
+          if (onProgress) {
+            // Convert to WebLLM-style progress
+            const percent = progress.total > 0
+              ? Math.round((progress.loaded / progress.total) * 100)
+              : 0
+
+            onProgress({
+              stage: progress.status.includes('download') ? 'downloading' : 'loading',
+              progress: percent,
+              text: progress.status,
+            })
+          }
+        })
+      }
+
+      console.log('[UnifiedEngine] Model loaded successfully')
+    } catch (error) {
+      console.error('[UnifiedEngine] Failed to load model:', error)
+      throw error
     }
   }
 
