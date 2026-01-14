@@ -713,29 +713,29 @@ export function ChatInterface({
   }
 
   return (
-    <div className="flex flex-col h-[600px] max-h-[80vh] border border-border rounded-lg overflow-hidden bg-background">
+    <div className="flex flex-col h-[600px] sm:h-[600px] max-h-[85vh] sm:max-h-[80vh] border border-border rounded-lg overflow-hidden bg-background">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-border bg-muted/30">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <Leaf className="h-5 w-5 text-primary" />
+      <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 px-2 sm:px-4 py-2 sm:py-3 border-b border-border bg-muted/30">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg flex-shrink-0">
+            <Leaf className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
           </div>
-          <div>
-            <h3 className="font-semibold">{conversationTitle}</h3>
-            <p className="text-xs text-muted-foreground">
+          <div className="min-w-0">
+            <h3 className="font-semibold text-sm sm:text-base truncate">{conversationTitle}</h3>
+            <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
               {isGenerating
                 ? (lang === 'es' ? 'Pensando...' : 'Thinking...')
                 : (lang === 'es' ? 'Listo para ayudar' : 'Ready to help')}
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>{lang === 'es' ? 'Modelo' : 'Model'}</span>
+        <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+          <label className="flex items-center gap-1 sm:gap-2 text-xs text-muted-foreground">
+            <span className="hidden sm:inline">{lang === 'es' ? 'Modelo' : 'Model'}</span>
             <select
               value={activeModelId}
               onChange={handleModelChange}
-              className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+              className="rounded-md border border-border bg-background px-1.5 sm:px-2 py-1 text-[10px] sm:text-xs"
             >
               {Object.entries(AVAILABLE_MODELS).map(([id, config]) => (
                 <option key={id} value={id}>{config.name}</option>
@@ -746,52 +746,54 @@ export function ChatInterface({
             type="button"
             onClick={handlePrivacyToggle}
             className={cn(
-              'flex items-center gap-2 px-2.5 py-1.5 text-xs text-muted-foreground border border-border rounded-md hover:bg-muted transition-colors',
+              'flex items-center gap-1 sm:gap-2 px-2 sm:px-2.5 py-1.5 text-xs text-muted-foreground border border-border rounded-md hover:bg-muted transition-colors',
               privacyMode && 'text-primary border-primary/40 bg-primary/10'
             )}
             title={lang === 'es' ? 'Modo privacidad' : 'Privacy mode'}
           >
             <Shield className="h-3.5 w-3.5" />
-            {lang === 'es' ? 'Privacidad' : 'Privacy'}
+            <span className="hidden sm:inline">{lang === 'es' ? 'Privacidad' : 'Privacy'}</span>
           </button>
           {activeConversation && (
             <button
               type="button"
               onClick={handleRenameConversation}
-              className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-muted transition-colors"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-muted transition-colors"
               title={lang === 'es' ? 'Renombrar' : 'Rename'}
             >
               <Pencil className="h-3.5 w-3.5" />
-              {lang === 'es' ? 'Renombrar' : 'Rename'}
+              <span className="hidden md:inline">{lang === 'es' ? 'Renombrar' : 'Rename'}</span>
             </button>
           )}
           {canExport && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <button
                 type="button"
                 onClick={() => handleExport('markdown')}
-                className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-muted transition-colors"
+                className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-muted transition-colors"
+                title="Export Markdown"
               >
                 <Download className="h-3.5 w-3.5" />
-                MD
+                <span className="hidden sm:inline">MD</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleExport('json')}
-                className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-muted transition-colors"
+                className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-muted transition-colors"
+                title="Export JSON"
               >
                 <Download className="h-3.5 w-3.5" />
-                JSON
+                <span className="hidden sm:inline">JSON</span>
               </button>
             </div>
           )}
           <button
             onClick={handleNewConversation}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-muted transition-colors"
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-muted transition-colors"
             title={lang === 'es' ? 'Nueva conversación' : 'New conversation'}
           >
-            <RotateCcw className="h-4 w-4" />
-            {lang === 'es' ? 'Nueva' : 'New'}
+            <RotateCcw className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
+            <span className="hidden sm:inline">{lang === 'es' ? 'Nueva' : 'New'}</span>
           </button>
         </div>
       </div>
@@ -801,18 +803,18 @@ export function ChatInterface({
         ref={messagesContainerRef}
         onScroll={handleScroll}
         className={cn(
-          'flex-1 relative overflow-y-auto p-4 space-y-4',
+          'flex-1 relative overflow-y-auto p-2 sm:p-4 space-y-3 sm:space-y-4',
           privacyMode && 'blur-sm pointer-events-none select-none'
         )}
       >
         {messages.length === 0 ? (
           // Empty state with starters
-          <div className="h-full flex flex-col items-center justify-center text-center">
-            <Sparkles className="h-12 w-12 text-primary/50 mb-4" />
-            <h4 className="text-lg font-medium mb-2">
+          <div className="h-full flex flex-col items-center justify-center text-center px-2 sm:px-4">
+            <Sparkles className="h-10 w-10 sm:h-12 sm:w-12 text-primary/50 mb-3 sm:mb-4" />
+            <h4 className="text-base sm:text-lg font-medium mb-2">
               {lang === 'es' ? '¿Cómo puedo ayudarte?' : 'How can I help you?'}
             </h4>
-            <p className="text-sm text-muted-foreground mb-6 max-w-md">
+            <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6 max-w-md px-4">
               {lang === 'es'
                 ? 'Estoy aquí para ayudarte con preguntas, escritura, explicaciones y más.'
                 : 'I\'m here to help with questions, writing, explanations, and more.'}
@@ -824,7 +826,7 @@ export function ChatInterface({
                 <button
                   key={i}
                   onClick={() => handleStarterClick(starter)}
-                  className="px-3 py-2 text-sm border border-border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors text-left"
+                  className="px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors text-left"
                 >
                   {starter}
                 </button>
@@ -842,20 +844,20 @@ export function ChatInterface({
               <div
                 key={index}
                 className={cn(
-                  'flex gap-3',
+                  'flex gap-2 sm:gap-3',
                   isUser ? 'justify-end' : 'justify-start'
                 )}
               >
                 {message.role === 'assistant' && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Leaf className="h-4 w-4 text-primary" />
+                  <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Leaf className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                   </div>
                 )}
 
                 <div className={cn('flex flex-col gap-1', isUser ? 'items-end' : 'items-start')}>
                   <div
                     className={cn(
-                      'max-w-[80%] rounded-lg px-4 py-2',
+                      'max-w-[85%] sm:max-w-[80%] rounded-lg px-3 sm:px-4 py-2',
                       isUser
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted'
@@ -875,7 +877,7 @@ export function ChatInterface({
 
                   <div
                     className={cn(
-                      'flex items-center gap-2 text-[11px] text-muted-foreground',
+                      'flex items-center gap-1 sm:gap-2 text-[10px] sm:text-[11px] text-muted-foreground flex-wrap',
                       isUser ? 'justify-end' : 'justify-start'
                     )}
                   >
@@ -883,23 +885,23 @@ export function ChatInterface({
                       type="button"
                       onClick={() => handleCopy(message.content)}
                       disabled={!canCopy}
-                      className="inline-flex items-center gap-1 hover:text-foreground disabled:opacity-50"
+                      className="inline-flex items-center gap-0.5 sm:gap-1 hover:text-foreground disabled:opacity-50"
                       title={lang === 'es' ? 'Copiar' : 'Copy'}
                     >
                       <Copy className="h-3 w-3" />
-                      {lang === 'es' ? 'Copiar' : 'Copy'}
+                      <span className="hidden sm:inline">{lang === 'es' ? 'Copiar' : 'Copy'}</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleBookmark(index)}
                       className={cn(
-                        'inline-flex items-center gap-1 hover:text-foreground',
+                        'inline-flex items-center gap-0.5 sm:gap-1 hover:text-foreground',
                         message.bookmarked && 'text-primary'
                       )}
                       title={lang === 'es' ? 'Marcar' : 'Bookmark'}
                     >
                       <Bookmark className="h-3 w-3" />
-                      {lang === 'es' ? 'Guardar' : 'Save'}
+                      <span className="hidden md:inline">{lang === 'es' ? 'Guardar' : 'Save'}</span>
                     </button>
                     {!isUser && (
                       <>
@@ -907,25 +909,25 @@ export function ChatInterface({
                           type="button"
                           onClick={() => handleReaction(index, 'up')}
                           className={cn(
-                            'inline-flex items-center gap-1 hover:text-foreground',
+                            'inline-flex items-center gap-0.5 sm:gap-1 hover:text-foreground',
                             message.reaction === 'up' && 'text-primary'
                           )}
                           title={lang === 'es' ? 'Me gusta' : 'Like'}
                         >
                           <ThumbsUp className="h-3 w-3" />
-                          {lang === 'es' ? 'Útil' : 'Helpful'}
+                          <span className="hidden md:inline">{lang === 'es' ? 'Útil' : 'Helpful'}</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => handleReaction(index, 'down')}
                           className={cn(
-                            'inline-flex items-center gap-1 hover:text-foreground',
+                            'inline-flex items-center gap-0.5 sm:gap-1 hover:text-foreground',
                             message.reaction === 'down' && 'text-primary'
                           )}
                           title={lang === 'es' ? 'No útil' : 'Not helpful'}
                         >
                           <ThumbsDown className="h-3 w-3" />
-                          {lang === 'es' ? 'No útil' : 'Not helpful'}
+                          <span className="hidden md:inline">{lang === 'es' ? 'No útil' : 'Not helpful'}</span>
                         </button>
                       </>
                     )}
@@ -933,11 +935,11 @@ export function ChatInterface({
                       type="button"
                       onClick={() => handleDeleteMessage(index, message.role === 'user' ? 'user' : 'assistant')}
                       disabled={isGenerating}
-                      className="inline-flex items-center gap-1 hover:text-destructive disabled:opacity-50"
+                      className="inline-flex items-center gap-0.5 sm:gap-1 hover:text-destructive disabled:opacity-50"
                       title={lang === 'es' ? 'Eliminar' : 'Delete'}
                     >
                       <Trash2 className="h-3 w-3" />
-                      {lang === 'es' ? 'Eliminar' : 'Delete'}
+                      <span className="hidden md:inline">{lang === 'es' ? 'Eliminar' : 'Delete'}</span>
                     </button>
                     {isLastUser && (
                       <>
@@ -945,21 +947,21 @@ export function ChatInterface({
                           type="button"
                           onClick={handleEditLast}
                           disabled={isGenerating}
-                          className="inline-flex items-center gap-1 hover:text-foreground disabled:opacity-50"
+                          className="inline-flex items-center gap-0.5 sm:gap-1 hover:text-foreground disabled:opacity-50"
                           title={lang === 'es' ? 'Editar' : 'Edit'}
                         >
                           <Pencil className="h-3 w-3" />
-                          {lang === 'es' ? 'Editar' : 'Edit'}
+                          <span className="hidden md:inline">{lang === 'es' ? 'Editar' : 'Edit'}</span>
                         </button>
                         <button
                           type="button"
                           onClick={handleResendLast}
                           disabled={isGenerating}
-                          className="inline-flex items-center gap-1 hover:text-foreground disabled:opacity-50"
+                          className="inline-flex items-center gap-0.5 sm:gap-1 hover:text-foreground disabled:opacity-50"
                           title={lang === 'es' ? 'Reenviar' : 'Resend'}
                         >
                           <RefreshCw className="h-3 w-3" />
-                          {lang === 'es' ? 'Reenviar' : 'Resend'}
+                          <span className="hidden md:inline">{lang === 'es' ? 'Reenviar' : 'Resend'}</span>
                         </button>
                       </>
                     )}
@@ -967,8 +969,8 @@ export function ChatInterface({
                 </div>
 
                 {message.role === 'user' && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                    <User className="h-4 w-4 text-primary-foreground" />
+                  <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-primary flex items-center justify-center">
+                    <User className="h-3 w-3 sm:h-4 sm:w-4 text-primary-foreground" />
                   </div>
                 )}
               </div>
@@ -988,10 +990,10 @@ export function ChatInterface({
           <button
             type="button"
             onClick={scrollToLatest}
-            className="absolute bottom-4 right-4 flex items-center gap-2 rounded-full border border-border bg-background/90 px-3 py-1.5 text-xs text-muted-foreground shadow-sm hover:text-foreground"
+            className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 flex items-center gap-1 sm:gap-2 rounded-full border border-border bg-background/90 px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs text-muted-foreground shadow-sm hover:text-foreground"
           >
-            <ArrowDown className="h-3.5 w-3.5" />
-            {lang === 'es' ? 'Ir al final' : 'Jump to latest'}
+            <ArrowDown className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <span className="hidden sm:inline">{lang === 'es' ? 'Ir al final' : 'Jump to latest'}</span>
           </button>
         )}
       </div>
@@ -1000,12 +1002,12 @@ export function ChatInterface({
       <form
         onSubmit={handleSubmit}
         className={cn(
-          'border-t border-border p-4 bg-muted/30',
+          'border-t border-border p-2 sm:p-4 bg-muted/30',
           privacyMode && 'blur-sm pointer-events-none select-none'
         )}
       >
         {isEditing && (
-          <div className="mb-2 flex items-center justify-between rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs">
+          <div className="mb-2 flex items-center justify-between rounded-md border border-primary/20 bg-primary/5 px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs">
             <span>
               {lang === 'es' ? 'Editando el último mensaje' : 'Editing the last message'}
             </span>
@@ -1019,8 +1021,8 @@ export function ChatInterface({
           </div>
         )}
         {promptTemplates.length > 0 && (
-          <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span className="text-[11px] text-muted-foreground">
+          <div className="mb-2 flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <span className="text-[10px] sm:text-[11px] text-muted-foreground">
               {lang === 'es' ? 'Plantillas:' : 'Templates:'}
             </span>
             {promptTemplates.map((template) => (
@@ -1028,24 +1030,24 @@ export function ChatInterface({
                 key={template.id}
                 type="button"
                 onClick={() => handleTemplateSelect(template.content)}
-                className="rounded-full border border-border px-3 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+                className="rounded-full border border-border px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-[11px] text-muted-foreground hover:text-foreground"
               >
                 {template.title}
               </button>
             ))}
           </div>
         )}
-        <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+        <div className="mb-2 flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground">
           <button
             type="button"
             onClick={handleFileSelect}
             disabled={isGenerating}
             className="inline-flex items-center gap-1 hover:text-foreground disabled:opacity-50"
           >
-            <FileText className="h-3.5 w-3.5" />
-            {lang === 'es' ? 'Analizar archivo' : 'Analyze file'}
+            <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <span className="hidden sm:inline">{lang === 'es' ? 'Analizar archivo' : 'Analyze file'}</span>
           </button>
-          <span>{lang === 'es' ? 'Análisis local' : 'Local analysis'}</span>
+          <span className="text-[10px] sm:text-xs">{lang === 'es' ? 'Análisis local' : 'Local analysis'}</span>
         </div>
         <input
           ref={fileInputRef}
@@ -1054,7 +1056,7 @@ export function ChatInterface({
           accept="text/*,.json,.md,.ts,.tsx,.js,.jsx,.py,.rs,.go,.java"
           onChange={handleFileChange}
         />
-        <div className="flex gap-2">
+        <div className="flex gap-1.5 sm:gap-2">
           <textarea
             ref={inputRef}
             value={input}
@@ -1063,29 +1065,29 @@ export function ChatInterface({
             placeholder={lang === 'es' ? 'Escribe tu mensaje...' : 'Type your message...'}
             disabled={isGenerating}
             rows={1}
-            className="flex-1 px-4 py-2 border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary bg-background disabled:opacity-50"
-            style={{ minHeight: '44px', maxHeight: '120px' }}
+            className="flex-1 px-3 sm:px-4 py-2 border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary bg-background disabled:opacity-50 text-sm"
+            style={{ minHeight: '40px', maxHeight: '120px' }}
           />
           {isGenerating ? (
             <button
               type="button"
               onClick={stopGeneration}
-              className="px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:text-foreground hover:bg-muted/80 transition-colors"
+              className="px-3 sm:px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:text-foreground hover:bg-muted/80 transition-colors flex-shrink-0"
             >
-              <Square className="h-5 w-5" />
+              <Square className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
           ) : (
             <button
               type="submit"
               disabled={!input.trim()}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 sm:px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
             >
-              <Send className="h-5 w-5" />
+              <Send className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
           )}
         </div>
 
-        <p className="text-xs text-muted-foreground mt-2 text-center">
+        <p className="text-[10px] sm:text-xs text-muted-foreground mt-2 text-center">
           {lang === 'es'
             ? 'Toda la conversación se procesa localmente. Tus datos nunca salen de tu dispositivo.'
             : 'All conversation is processed locally. Your data never leaves your device.'}

@@ -15,12 +15,54 @@ class WorkerEngine {
   private isReady = false
   private messageHandlers: Map<string, MessageHandler[]> = new Map()
   private currentModel: ModelId | null = null
+  private initializationAttempts = 0
+  private readonly MAX_INIT_ATTEMPTS = 3
+
+  /**
+   * Check if browser/platform is supported
+   */
+  private checkBrowserSupport(): { supported: boolean; reason?: string } {
+    // Check for iOS Safari
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+
+    if (isIOS && isSafari) {
+      // iOS Safari doesn't support WebGPU yet
+      const iosVersion = navigator.userAgent.match(/OS (\d+)_/)?.[1]
+      return {
+        supported: false,
+        reason: `iOS Safari doesn't support WebGPU yet. Please use Chrome or a desktop browser. (iOS ${iosVersion || 'version unknown'})`
+      }
+    }
+
+    // Check for Web Workers support
+    if (typeof Worker === 'undefined') {
+      return {
+        supported: false,
+        reason: 'Web Workers are not supported in this browser.'
+      }
+    }
+
+    return { supported: true }
+  }
 
   /**
    * Initialize the worker
    */
   async init(): Promise<void> {
     if (this.worker) return
+
+    // Check browser support first
+    const browserCheck = this.checkBrowserSupport()
+    if (!browserCheck.supported) {
+      throw new Error(browserCheck.reason || 'Browser not supported')
+    }
+
+    if (this.initializationAttempts >= this.MAX_INIT_ATTEMPTS) {
+      throw new Error('Worker initialization failed after multiple attempts. Please refresh the page.')
+    }
+
+    this.initializationAttempts++
 
     return new Promise((resolve, reject) => {
       try {
@@ -37,7 +79,13 @@ class WorkerEngine {
 
         this.worker.onerror = (error) => {
           console.error('Worker error:', error)
-          reject(error)
+          this.handleWorkerCrash(error)
+          reject(new Error('Worker crashed. This may be due to browser limitations. Try using Chrome or a desktop browser.'))
+        }
+
+        this.worker.onmessageerror = (error) => {
+          console.error('Worker message error:', error)
+          reject(new Error('Worker communication error'))
         }
 
         // Wait for ready signal
@@ -305,6 +353,34 @@ class WorkerEngine {
   }
 
   /**
+   * Handle worker crash
+   */
+  private handleWorkerCrash(error: ErrorEvent) {
+    console.error('Worker crashed:', error)
+
+    // Clean up the crashed worker
+    if (this.worker) {
+      try {
+        this.worker.terminate()
+      } catch (e) {
+        console.error('Error terminating crashed worker:', e)
+      }
+      this.worker = null
+      this.isReady = false
+      this.messageHandlers.clear()
+    }
+
+    // Notify all handlers of the crash
+    const allHandlers = this.messageHandlers.get('all')
+    if (allHandlers) {
+      allHandlers.forEach((handler) => handler({
+        type: 'load-error' as any,
+        error: 'Worker crashed. Please try using Chrome or a desktop browser.'
+      }))
+    }
+  }
+
+  /**
    * Terminate worker
    */
   terminate() {
@@ -314,7 +390,15 @@ class WorkerEngine {
       this.isReady = false
       this.currentModel = null
       this.messageHandlers.clear()
+      this.initializationAttempts = 0
     }
+  }
+
+  /**
+   * Reset initialization attempts
+   */
+  resetInitAttempts() {
+    this.initializationAttempts = 0
   }
 }
 

@@ -5,6 +5,20 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    headers: {
+      // Required for SharedArrayBuffer and WebGPU
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+    },
+  },
+  preview: {
+    headers: {
+      // Required for SharedArrayBuffer and WebGPU
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+    },
+  },
   plugins: [
     react(),
     VitePWA({
@@ -17,6 +31,7 @@ export default defineConfig({
         'pwa-512x512.png',
         'maskable-icon-512x512.png',
         'shortcuts/settings.png',
+        '_headers',
       ],
       manifest: {
         name: 'Leaf AI - Private AI Assistant',

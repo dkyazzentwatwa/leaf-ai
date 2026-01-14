@@ -1,0 +1,6 @@
+# Headers for SharedArrayBuffer and WebGPU support
+# Required for AI model execution in the browser
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Resource-Policy: cross-origin
