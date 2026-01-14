@@ -1,6 +1,8 @@
 # Headers for SharedArrayBuffer and WebGPU support
-# Required for AI model execution in the browser
+# Required for AI model execution in the browser (WebLLM/iOS 26+)
 /*
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Resource-Policy: cross-origin
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

@@ -10,6 +10,15 @@ import type { ModelId, ModelLoadProgress, ChatMessage, GenerateOptions } from '.
 
 type MessageHandler = (response: WorkerResponse) => void
 
+interface DeviceCapabilities {
+  platform: 'ios' | 'android' | 'desktop'
+  iosVersion: number | null
+  maxBufferSize: number | null
+  estimatedRAM: number
+  webGPUAvailable: boolean
+  deviceName: string
+}
+
 class WorkerEngine {
   private worker: Worker | null = null
   private isReady = false
@@ -17,6 +26,7 @@ class WorkerEngine {
   private currentModel: ModelId | null = null
   private initializationAttempts = 0
   private readonly MAX_INIT_ATTEMPTS = 3
+  private deviceCapabilities: DeviceCapabilities | null = null
 
   /**
    * Check if browser/platform is supported
@@ -202,6 +212,74 @@ class WorkerEngine {
   }
 
   /**
+   * Detect device capabilities and platform
+   * Includes platform type, iOS version, GPU buffer limits, and RAM estimation
+   */
+  private async detectDeviceCapabilities(): Promise<DeviceCapabilities> {
+    const ua = navigator.userAgent
+
+    // iOS Detection (including iPadOS)
+    const isIOS = this.isIOS()
+
+    // Get iOS/Safari version
+    const iosVersion = isIOS ? this.getIOSSafariVersion() : null
+
+    // Device name detection
+    let deviceName = 'Unknown Device'
+    if (ua.includes('iPhone')) {
+      if (ua.includes('iPhone17')) deviceName = 'iPhone 17 Pro'
+      else if (ua.includes('iPhone16')) deviceName = 'iPhone 16 Pro'
+      else if (ua.includes('iPhone15')) deviceName = 'iPhone 15 Pro'
+      else deviceName = 'iPhone'
+    } else if (ua.includes('iPad')) {
+      deviceName = 'iPad'
+    }
+
+    // Check WebGPU availability
+    const nav = navigator as Navigator & { gpu?: GPU }
+    const webGPUAvailable = !!nav.gpu
+
+    // Query GPU buffer size limits
+    let maxBufferSize: number | null = null
+    if (webGPUAvailable && nav.gpu) {
+      try {
+        const adapter = await Promise.race([
+          nav.gpu.requestAdapter(),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000))
+        ])
+
+        if (adapter) {
+          const limits = (adapter as any).limits
+          maxBufferSize = limits?.maxBufferSize || limits?.maxStorageBufferBindingSize || null
+
+          console.log('[WorkerEngine] GPU limits:', {
+            maxBufferSize: maxBufferSize ? `${(maxBufferSize / 1024 / 1024).toFixed(0)}MB` : 'unknown',
+            maxStorageBufferBindingSize: limits.maxStorageBufferBindingSize,
+            adapterInfo: (adapter as any).info
+          })
+        }
+      } catch (e) {
+        console.warn('[WorkerEngine] Failed to query GPU limits:', e)
+      }
+    }
+
+    // Estimate RAM (navigator.deviceMemory is desktop-only)
+    const estimatedRAM = (navigator as any).deviceMemory || (isIOS ? 6 : 8)
+
+    const capabilities: DeviceCapabilities = {
+      platform: isIOS ? 'ios' : (ua.includes('Android') ? 'android' : 'desktop'),
+      iosVersion,
+      maxBufferSize,
+      estimatedRAM,
+      webGPUAvailable,
+      deviceName
+    }
+
+    console.log('[WorkerEngine] Device capabilities:', capabilities)
+    return capabilities
+  }
+
+  /**
    * Check WebGPU support directly (without worker)
    */
   private async checkWebGPUDirectly(): Promise<{ supported: boolean; error?: string }> {
@@ -270,7 +348,43 @@ class WorkerEngine {
       return directCheck
     }
 
-    console.log('[WorkerEngine] Direct WebGPU check passed, verifying with worker...')
+    console.log('[WorkerEngine] Direct WebGPU check passed')
+
+    // ===== DETECT DEVICE CAPABILITIES =====
+    this.deviceCapabilities = await this.detectDeviceCapabilities()
+    const { platform, iosVersion, maxBufferSize, webGPUAvailable, deviceName } = this.deviceCapabilities
+
+    // Block iOS < 26 (no WebGPU)
+    if (platform === 'ios' && iosVersion !== null && iosVersion < 26) {
+      return {
+        supported: false,
+        error: `WebGPU requires iOS 26+. Your device (iOS ${iosVersion}) doesn't support it yet. Please update to iOS 26 or later.`
+      }
+    }
+
+    // Block if WebGPU not available
+    if (!webGPUAvailable) {
+      return {
+        supported: false,
+        error: 'WebGPU not available. Please use Chrome 113+, Edge 113+, or Safari 26+ on iOS 26+.'
+      }
+    }
+
+    // ===== iOS 26+ DETECTED - ALLOW WITH WARNINGS =====
+    if (platform === 'ios') {
+      console.log(`[WorkerEngine] ✅ iOS 26+ detected: ${deviceName}`)
+      console.log('[WorkerEngine] WebGPU supported, but strict memory limits apply')
+      console.log('[WorkerEngine] Buffer size:', maxBufferSize ? `${(maxBufferSize / 1024 / 1024).toFixed(0)}MB` : 'unknown')
+      console.warn('[WorkerEngine] ⚠️  iOS WebContent limit: 1.5GB (system-level)')
+      console.warn('[WorkerEngine] ⚠️  Only small models (< 400MB) will work')
+
+      // iOS allowed - will validate model size before loading
+      // No worker initialization needed - direct GPU check sufficient
+      return { supported: true }
+    }
+
+    // Desktop/Android - proceed with worker verification
+    console.log('[WorkerEngine] Verifying with worker...')
 
     // If direct check passes, verify with worker (with timeout)
     try {
@@ -311,6 +425,53 @@ class WorkerEngine {
   }
 
   /**
+   * Validate model can load on current device
+   * Checks if model size is compatible with device GPU buffer limits
+   */
+  private validateModelForDevice(modelId: ModelId): { valid: boolean; error?: string } {
+    if (!this.deviceCapabilities) {
+      return { valid: true } // Capabilities not checked yet, allow attempt
+    }
+
+    const { AVAILABLE_MODELS } = require('./engine')
+    const modelInfo = AVAILABLE_MODELS[modelId]
+
+    if (!modelInfo) {
+      return { valid: false, error: `Model ${modelId} not found` }
+    }
+
+    const { platform, maxBufferSize } = this.deviceCapabilities
+
+    // iOS validation
+    if (platform === 'ios') {
+      // Check if model is iOS-compatible
+      if (!modelInfo.iosOnly) {
+        return {
+          valid: false,
+          error: `${modelInfo.name} (${modelInfo.size}) is too large for iOS. Please select SmolLM2 135M or TinyLlama 1.1B.`
+        }
+      }
+
+      // Check buffer size if known
+      if (maxBufferSize && modelInfo.maxBufferSizeMB) {
+        const bufferSizeNeeded = modelInfo.maxBufferSizeMB * 1024 * 1024
+        if (bufferSizeNeeded > maxBufferSize) {
+          return {
+            valid: false,
+            error: `Model requires ${modelInfo.maxBufferSizeMB}MB buffer, but device only has ${(maxBufferSize / 1024 / 1024).toFixed(0)}MB available.`
+          }
+        }
+      }
+
+      console.log(`[WorkerEngine] ✅ Model ${modelId} validated for iOS`)
+      return { valid: true }
+    }
+
+    // Desktop/Android - all models allowed
+    return { valid: true }
+  }
+
+  /**
    * Load model with progress callback
    */
   async loadModel(
@@ -318,6 +479,12 @@ class WorkerEngine {
     onProgress?: (progress: ModelLoadProgress) => void
   ): Promise<void> {
     await this.init()
+
+    // ===== VALIDATE MODEL BEFORE LOADING =====
+    const validation = this.validateModelForDevice(modelId)
+    if (!validation.valid) {
+      throw new Error(validation.error || 'Model not compatible with device')
+    }
 
     return new Promise((resolve, reject) => {
       const progressHandler = (response: WorkerResponse) => {

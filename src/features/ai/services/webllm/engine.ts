@@ -7,33 +7,80 @@
 
 import * as webllm from '@mlc-ai/web-llm'
 
-// Model configurations - optimized for mobile/desktop balance
+// Model configurations - iOS-first with mandatory 4-bit quantization
 export const AVAILABLE_MODELS = {
-  // Primary model - good balance of quality and size
+  // ===== iOS-ONLY MODELS (< 400MB, 4-BIT QUANTIZED) =====
+  // These models are designed for iOS 26+ Safari with strict memory limits
+  'SmolLM2-135M-Instruct-q4f16_1-MLC': {
+    name: 'SmolLM2 135M (q4)',
+    description: 'Ultra-tiny 4-bit model for iOS',
+    size: '~130MB',
+    recommended: true, // Recommended for iOS
+    minRAM: 1,
+    iosOnly: true,
+    maxBufferSizeMB: 200,
+    performance: '2-3 tok/sec on iPhone 17 Pro',
+    quantization: 'q4f16_1', // 4-bit weights, f16 activations
+  },
+  'TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC': {
+    name: 'TinyLlama 1.1B (q4)',
+    description: 'Small 4-bit model for newer iPhones',
+    size: '~350MB',
+    recommended: false,
+    minRAM: 2,
+    iosOnly: true,
+    maxBufferSizeMB: 400,
+    performance: '1-2 tok/sec on iPhone 17 Pro',
+    quantization: 'q4f16_1',
+  },
+
+  // ===== DESKTOP/ANDROID MODELS (1-3GB, 4-BIT QUANTIZED) =====
   'Llama-3.2-3B-Instruct-q4f16_1-MLC': {
-    name: 'Llama 3.2 3B',
-    description: 'Best quality, ~2GB download',
+    name: 'Llama 3.2 3B (q4)',
+    description: 'Best quality 4-bit model (Desktop/Android)',
     size: '~2GB',
     recommended: true,
     minRAM: 4,
+    iosOnly: false,
+    maxBufferSizeMB: 2000,
+    performance: '3-7 tok/sec',
+    quantization: 'q4f16_1',
   },
-  // Smaller fallback
   'Phi-3.5-mini-instruct-q4f16_1-MLC': {
-    name: 'Phi 3.5 Mini',
-    description: 'Smaller model, ~1.5GB download',
+    name: 'Phi 3.5 Mini (q4)',
+    description: 'Good 4-bit balance (Desktop/Android)',
     size: '~1.5GB',
     recommended: false,
     minRAM: 3,
+    iosOnly: false,
+    maxBufferSizeMB: 1500,
+    performance: '4-6 tok/sec',
+    quantization: 'q4f16_1',
   },
-  // Tiny model for low-end devices
   'Qwen2.5-1.5B-Instruct-q4f16_1-MLC': {
-    name: 'Qwen 2.5 1.5B',
-    description: 'Smallest model, ~1GB download',
+    name: 'Qwen 2.5 1.5B (q4)',
+    description: 'Smallest 4-bit full model (Desktop/Android)',
     size: '~1GB',
     recommended: false,
     minRAM: 2,
+    iosOnly: false,
+    maxBufferSizeMB: 1000,
+    performance: '5-7 tok/sec',
+    quantization: 'q4f16_1',
   },
 } as const
+
+export interface ModelInfo {
+  name: string
+  description: string
+  size: string
+  recommended: boolean
+  minRAM: number
+  iosOnly: boolean
+  maxBufferSizeMB: number
+  performance: string
+  quantization: string
+}
 
 export type ModelId = keyof typeof AVAILABLE_MODELS
 

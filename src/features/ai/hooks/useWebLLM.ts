@@ -87,7 +87,26 @@ export function useWebLLM(options: UseWebLLMOptions = {}) {
         })
       } catch (error) {
         setModelStatus('error')
-        setModelError(error instanceof Error ? error.message : 'Failed to load model')
+
+        // Parse error and provide helpful message
+        let errorMessage = 'Failed to load AI model'
+        if (error instanceof Error) {
+          if (error.message.includes('too large for iOS')) {
+            errorMessage = error.message + ' iOS devices have strict memory limits (1.5GB WebContent limit).'
+          } else if (error.message.includes('Device was lost') || error.message.includes('device lost')) {
+            errorMessage = 'GPU ran out of memory. The model exceeded your device limits. Please try a smaller model or restart the app.'
+          } else if (error.message.includes('buffer') || error.message.includes('Buffer')) {
+            errorMessage = 'Model size exceeds device GPU buffer limits. Try a smaller model (SmolLM2 135M for iOS).'
+          } else if (error.message.includes('WebGPU') || error.message.includes('GPU')) {
+            errorMessage = error.message
+          } else if (error.message.includes('Worker')) {
+            errorMessage = 'Web Worker initialization failed. Your browser may have limited support. Try desktop Chrome or Edge.'
+          } else {
+            errorMessage = error.message
+          }
+        }
+
+        setModelError(errorMessage)
         throw error
       } finally {
         const end = typeof performance !== 'undefined' ? performance.now() : Date.now()

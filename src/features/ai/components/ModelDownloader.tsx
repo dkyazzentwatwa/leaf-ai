@@ -14,7 +14,6 @@ import {
   Info,
   Trash2,
   AlertCircle,
-  Zap,
 } from 'lucide-react'
 import { useWebLLM } from '../hooks/useWebLLM'
 import { AVAILABLE_MODELS, type ModelId } from '../services/webllm/engine'
@@ -51,7 +50,8 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
     name: string
     description: string
   } | null>(null)
-  const availableModels = AVAILABLE_MODELS
+  const [availableModels, setAvailableModels] = useState<Record<string, any>>({})
+  const [isIOS, setIsIOS] = useState(false)
   const preferredModel = useAIStore((s) => s.preferredModel)
   const setPreferredModel = useAIStore((s) => s.setPreferredModel)
   const [selectedModel, setSelectedModel] = useState<ModelId>(preferredModel as ModelId)
@@ -99,12 +99,45 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
     }
   }, [])
 
-  // Detect WebGPU support on mount
+  // Detect WebGPU support and filter models by platform
   useEffect(() => {
     unifiedEngine.detectEngine().then((info) => {
       setEngineInfo(info)
+
+      // Detect platform (iOS/Android/Desktop)
+      const ua = navigator.userAgent
+      const isIOSDevice = /iPad|iPhone|iPod/.test(ua) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+
+      setIsIOS(isIOSDevice)
+
+      // Filter models based on platform
+      const filtered = Object.fromEntries(
+        Object.entries(AVAILABLE_MODELS).filter(([_, modelInfo]) => {
+          if (isIOSDevice) {
+            // iOS: Only show iOS-compatible models (< 400MB)
+            return modelInfo.iosOnly === true
+          } else {
+            // Desktop/Android: Only show non-iOS models (1-3GB)
+            return modelInfo.iosOnly === false
+          }
+        })
+      )
+
+      setAvailableModels(filtered)
+
+      // Set default model based on platform
+      if (isIOSDevice && Object.keys(filtered).length > 0) {
+        const firstIOSModel = Object.keys(filtered)[0] as ModelId
+        // Only update if current preferred model is not iOS-compatible
+        const currentModelInfo = AVAILABLE_MODELS[preferredModel as ModelId]
+        if (!currentModelInfo || !currentModelInfo.iosOnly) {
+          setPreferredModel(firstIOSModel)
+          setSelectedModel(firstIOSModel)
+        }
+      }
     })
-  }, [])
+  }, [preferredModel, setPreferredModel])
 
   useEffect(() => {
     loadCachedModels()
@@ -281,17 +314,15 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
       </div>
 
       {/* iOS WebGPU Support Banner */}
-      {engineInfo && engineInfo.supported &&
-       (navigator.userAgent.includes('iPhone') ||
-        navigator.userAgent.includes('iPad')) && (
+      {isIOS && engineInfo?.supported && (
         <div className="flex items-start gap-2 px-3 py-2 bg-green-500/10 border border-green-500/30 rounded-md">
-          <Zap className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+          <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
           <div className="flex-1">
             <p className="text-xs sm:text-sm text-green-700 dark:text-green-300 font-medium">
-              WebGPU Active on iOS!
+              iPhone/iPad Detected - WebGPU Active!
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Your device supports hardware-accelerated AI. Enjoy fast, local AI processing!
+              Your device supports hardware-accelerated AI. Using optimized iOS models (&lt; 400MB) for best performance.
             </p>
           </div>
         </div>
