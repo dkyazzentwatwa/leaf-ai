@@ -13,13 +13,12 @@ import {
   Loader2,
   Info,
   Trash2,
-  Zap,
   AlertCircle,
+  Zap,
 } from 'lucide-react'
 import { useWebLLM } from '../hooks/useWebLLM'
-import { AVAILABLE_MODELS } from '../services/webllm/engine'
-import type { TransformersModelId } from '../services/transformers/engine'
-import { unifiedEngine, type UnifiedModelId } from '../services/unifiedEngine'
+import { AVAILABLE_MODELS, type ModelId } from '../services/webllm/engine'
+import { unifiedEngine } from '../services/unifiedEngine'
 import { useAIStore } from '../stores/aiStore'
 import { cn } from '@/utils/cn'
 
@@ -28,8 +27,8 @@ interface ModelDownloaderProps {
   compact?: boolean
 }
 
-const identifyModel = (cacheName: string, urls: string[]): UnifiedModelId | null => {
-  const modelPatterns = Object.keys(AVAILABLE_MODELS) as UnifiedModelId[]
+const identifyModel = (cacheName: string, urls: string[]): ModelId | null => {
+  const modelPatterns = Object.keys(AVAILABLE_MODELS) as ModelId[]
 
   for (const pattern of modelPatterns) {
     const shortName = pattern.replace('-MLC', '').toLowerCase()
@@ -48,15 +47,15 @@ const identifyModel = (cacheName: string, urls: string[]): UnifiedModelId | null
 
 export function ModelDownloader({ onModelReady, compact = false }: ModelDownloaderProps) {
   const [engineInfo, setEngineInfo] = useState<{
-    type: 'webllm' | 'transformers' | null
+    supported: boolean
     name: string
     description: string
   } | null>(null)
-  const [availableModels, setAvailableModels] = useState<Record<string, any>>({})
+  const availableModels = AVAILABLE_MODELS
   const preferredModel = useAIStore((s) => s.preferredModel)
   const setPreferredModel = useAIStore((s) => s.setPreferredModel)
-  const [selectedModel, setSelectedModel] = useState<UnifiedModelId>(preferredModel as UnifiedModelId)
-  const [cachedModels, setCachedModels] = useState<Set<UnifiedModelId>>(new Set())
+  const [selectedModel, setSelectedModel] = useState<ModelId>(preferredModel as ModelId)
+  const [cachedModels, setCachedModels] = useState<Set<ModelId>>(new Set())
 
   const {
     isModelReady,
@@ -77,7 +76,7 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
       }
 
       const cacheNames = await caches.keys()
-      const found = new Set<UnifiedModelId>()
+      const found = new Set<ModelId>()
 
       for (const cacheName of cacheNames) {
         if (!cacheName.includes('webllm') && !cacheName.includes('mlc') && !cacheName.includes('tvmjs')) {
@@ -100,19 +99,10 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
     }
   }, [])
 
-  // Detect best engine on mount
+  // Detect WebGPU support on mount
   useEffect(() => {
-    unifiedEngine.detectEngine().then(async (info) => {
+    unifiedEngine.detectEngine().then((info) => {
       setEngineInfo(info)
-      const models = await unifiedEngine.getAvailableModels()
-      setAvailableModels(models)
-
-      // Set default model based on engine
-      if (info.type === 'transformers') {
-        const defaultModel = 'Xenova/TinyLlama-1.1B-Chat-v1.0' as TransformersModelId
-        setSelectedModel(defaultModel)
-        setPreferredModel(defaultModel)
-      }
     })
   }, [])
 
@@ -121,7 +111,7 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
   }, [loadCachedModels])
 
   useEffect(() => {
-    setSelectedModel(preferredModel as UnifiedModelId)
+    setSelectedModel(preferredModel as ModelId)
   }, [preferredModel])
 
   // Notify when model is ready
@@ -141,7 +131,7 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
     }
   }
 
-  const handleSelectModel = (modelId: UnifiedModelId) => {
+  const handleSelectModel = (modelId: ModelId) => {
     setSelectedModel(modelId)
     setPreferredModel(modelId)
   }
@@ -290,16 +280,18 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
         </div>
       </div>
 
-      {/* Engine info */}
-      {engineInfo && engineInfo.type === 'transformers' && (
+      {/* iOS WebGPU Support Banner */}
+      {engineInfo && engineInfo.supported &&
+       (navigator.userAgent.includes('iPhone') ||
+        navigator.userAgent.includes('iPad')) && (
         <div className="flex items-start gap-2 px-3 py-2 bg-green-500/10 border border-green-500/30 rounded-md">
           <Zap className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
           <div className="flex-1">
             <p className="text-xs sm:text-sm text-green-700 dark:text-green-300 font-medium">
-              iOS/Mobile Mode Active
+              WebGPU Active on iOS!
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Using WebGL/WebAssembly for local AI. Works on all devices including iOS!
+              Your device supports hardware-accelerated AI. Enjoy fast, local AI processing!
             </p>
           </div>
         </div>
@@ -309,7 +301,7 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
       <div className="space-y-2">
         <label className="text-sm font-medium">Select Model</label>
         <div className="space-y-2">
-          {(Object.entries(availableModels) as [UnifiedModelId, any][]).map(
+          {(Object.entries(availableModels) as [ModelId, any][]).map(
             ([id, info]) => (
               <label
                 key={id}

@@ -8,8 +8,8 @@
 
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { unifiedEngine, type UnifiedModelId } from '../services/unifiedEngine'
-import type { ChatMessage, GenerateOptions } from '../services/webllm/engine'
+import { unifiedEngine } from '../services/unifiedEngine'
+import type { ModelId, ChatMessage, GenerateOptions } from '../services/webllm/engine'
 import { getSystemPrompt, type AssistantType } from '../services/webllm/prompts'
 import {
   useAIStore,
@@ -58,11 +58,11 @@ export function useWebLLM(options: UseWebLLMOptions = {}) {
   }, [])
 
   /**
-   * Load the AI model (runs in Web Worker or Transformers.js)
+   * Load the AI model (runs in Web Worker)
    */
   const loadModel = useCallback(
-    async (modelId?: UnifiedModelId) => {
-      const model = (modelId || preferredModel) as UnifiedModelId
+    async (modelId?: ModelId) => {
+      const model = (modelId || preferredModel) as ModelId
 
       const start = typeof performance !== 'undefined' ? performance.now() : Date.now()
 

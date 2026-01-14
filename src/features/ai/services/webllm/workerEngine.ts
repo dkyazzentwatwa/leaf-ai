@@ -148,34 +148,89 @@ class WorkerEngine {
   }
 
   /**
+   * Detect if running on iOS/iPad (including iPadOS pretending to be Mac)
+   */
+  private isIOS(): boolean {
+    if (typeof navigator === 'undefined') return false
+
+    const ua = navigator.userAgent
+    const isIOSUA = /iPad|iPhone|iPod/.test(ua)
+    const isIPadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1
+
+    return isIOSUA || isIPadOS
+  }
+
+  /**
+   * Extract iOS or Safari version
+   * Returns null if version cannot be determined or not iOS/Safari
+   */
+  private getIOSSafariVersion(): number | null {
+    if (typeof navigator === 'undefined') return null
+
+    const ua = navigator.userAgent
+
+    // Check for Safari version (e.g., "Version/18.0" in Safari on iOS/macOS)
+    const safariMatch = ua.match(/Version\/(\d+)/)
+    if (safariMatch) {
+      return parseInt(safariMatch[1], 10)
+    }
+
+    // Check for iOS version in OS string (e.g., "iPhone OS 18_0")
+    const iosMatch = ua.match(/OS (\d+)[_\d]*/)
+    if (iosMatch) {
+      return parseInt(iosMatch[1], 10)
+    }
+
+    return null
+  }
+
+  /**
+   * Check if device supports WebGPU based on iOS/Safari version
+   * iOS 18+ / Safari 18+ supports WebGPU
+   */
+  private supportsWebGPUVersion(): boolean {
+    const version = this.getIOSSafariVersion()
+
+    // If we can't determine version but WebGPU API exists, assume it's supported
+    const nav = navigator as Navigator & { gpu?: GPU }
+    if (version === null && nav.gpu) {
+      return true
+    }
+
+    // iOS/Safari 18+ supports WebGPU
+    return version !== null && version >= 18
+  }
+
+  /**
    * Check WebGPU support directly (without worker)
    */
   private async checkWebGPUDirectly(): Promise<{ supported: boolean; error?: string }> {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
+    const isIOS = this.isIOS()
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
 
     // Check for WebGPU API
     const nav = navigator as Navigator & { gpu?: GPU }
     if (!nav.gpu) {
       // Provide helpful error messages based on platform
-      if (isIOS) {
+      if (isIOS && !this.supportsWebGPUVersion()) {
+        const version = this.getIOSSafariVersion()
         return {
           supported: false,
-          error: 'WebGPU is not yet available on your iOS version. You can use cloud AI mode instead, or try Chrome 113+ on desktop.'
+          error: `WebGPU requires iOS 18+ or Safari 18+. You have version ${version || 'unknown'}. Please update your device to use local AI.`
         }
       }
 
-      if (isSafari) {
-        const safariVersion = navigator.userAgent.match(/Version\/(\d+)/)?.[1]
+      if (isSafari && !this.supportsWebGPUVersion()) {
+        const safariVersion = this.getIOSSafariVersion()
         return {
           supported: false,
-          error: `Safari ${safariVersion || ''} doesn't support WebGPU yet. Please use Chrome 113+, Edge 113+, or try cloud AI mode.`
+          error: `WebGPU requires Safari 18+. You have Safari ${safariVersion || 'unknown'}. Please update your browser.`
         }
       }
 
       return {
         supported: false,
-        error: 'WebGPU is not supported in this browser. Please use Chrome 113+, Edge 113+, or try cloud AI mode.'
+        error: 'WebGPU is not supported in this browser. Please use Chrome 113+, Edge 113+, or update to Safari 18+.'
       }
     }
 
@@ -206,11 +261,16 @@ class WorkerEngine {
    * Check WebGPU support (tries direct check first, falls back to worker)
    */
   async checkWebGPUSupport(): Promise<{ supported: boolean; error?: string }> {
-    // First, do a quick direct check
+    console.log('[WorkerEngine] Checking WebGPU support...')
+
+    // Do a quick direct check first
     const directCheck = await this.checkWebGPUDirectly()
     if (!directCheck.supported) {
+      console.log('[WorkerEngine] Direct WebGPU check failed:', directCheck.error)
       return directCheck
     }
+
+    console.log('[WorkerEngine] Direct WebGPU check passed, verifying with worker...')
 
     // If direct check passes, verify with worker (with timeout)
     try {
@@ -239,7 +299,9 @@ class WorkerEngine {
         }, 5000)
       })
 
-      return await Promise.race([workerCheckPromise, timeoutPromise])
+      const result = await Promise.race([workerCheckPromise, timeoutPromise])
+      console.log('[WorkerEngine] Worker WebGPU check result:', result)
+      return result
     } catch (error) {
       return {
         supported: false,

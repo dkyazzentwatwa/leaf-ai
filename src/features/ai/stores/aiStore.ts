@@ -7,11 +7,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { ModelId, ModelLoadProgress, ChatMessage } from '../services/webllm/engine'
-import type { TransformersModelId } from '../services/transformers/engine'
 import type { AssistantType } from '../services/webllm/prompts'
-
-// Support both WebLLM and Transformers models
-export type AnyModelId = ModelId | TransformersModelId | string
 
 export interface StoredMessage extends ChatMessage {
   id: string
@@ -28,7 +24,7 @@ export interface Conversation {
   title?: string
   folder?: string
   tags?: string[]
-  modelId?: AnyModelId
+  modelId?: ModelId
 }
 
 export interface PromptTemplate {
@@ -41,7 +37,7 @@ interface AIState {
   // Model state
   modelStatus: 'idle' | 'downloading' | 'loading' | 'ready' | 'error'
   modelProgress: ModelLoadProgress | null
-  currentModel: AnyModelId | null
+  currentModel: ModelId | null
   modelError: string | null
 
   // Conversation state
@@ -49,7 +45,7 @@ interface AIState {
   activeConversationId: string | null
 
   // Settings
-  preferredModel: AnyModelId
+  preferredModel: ModelId
   autoLoadModel: boolean
   privacyMode: boolean
   promptTemplates: PromptTemplate[]
@@ -58,7 +54,7 @@ interface AIState {
   // Actions
   setModelStatus: (status: AIState['modelStatus']) => void
   setModelProgress: (progress: ModelLoadProgress | null) => void
-  setCurrentModel: (model: AnyModelId | null) => void
+  setCurrentModel: (model: ModelId | null) => void
   setModelError: (error: string | null) => void
 
   createConversation: (type: AssistantType) => string
@@ -69,7 +65,7 @@ interface AIState {
   renameConversation: (conversationId: string, title: string) => void
   setConversationFolder: (conversationId: string, folder: string | null) => void
   setConversationTags: (conversationId: string, tags: string[]) => void
-  setConversationModel: (conversationId: string, modelId: AnyModelId) => void
+  setConversationModel: (conversationId: string, modelId: ModelId) => void
   deleteMessage: (
     conversationId: string,
     messageIndex: number,
@@ -85,7 +81,7 @@ interface AIState {
   deleteConversation: (id: string) => void
   clearAllConversations: () => void
 
-  setPreferredModel: (model: AnyModelId) => void
+  setPreferredModel: (model: ModelId) => void
   setAutoLoadModel: (autoLoad: boolean) => void
   setPrivacyMode: (privacyMode: boolean) => void
   addPromptTemplate: (template: PromptTemplate) => void
