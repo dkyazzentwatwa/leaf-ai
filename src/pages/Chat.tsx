@@ -14,14 +14,14 @@ export function Chat() {
   return (
     <div className="max-w-6xl mx-auto px-3 sm:px-6">
       {/* Header */}
-      <div className="mb-4 sm:mb-8 text-center">
-        <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-4">
-          <Leaf className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent">
+      <div className="mb-3 sm:mb-5 text-center">
+        <div className="flex items-center justify-center gap-2 mb-1.5 sm:mb-2">
+          <Leaf className="h-7 w-7 sm:h-9 sm:w-9 text-primary" />
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent">
             Leaf AI
           </h1>
         </div>
-        <p className="text-sm sm:text-base md:text-lg text-muted-foreground px-4">
+        <p className="text-xs sm:text-sm md:text-base text-muted-foreground px-3">
           {lang === 'es'
             ? 'Tu asistente de IA privado, ejecutándose completamente en tu navegador'
             : 'Your private AI assistant, running entirely in your browser'}
@@ -29,7 +29,7 @@ export function Chat() {
       </div>
 
       {/* Privacy notice */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 mb-4 sm:mb-6 bg-primary/10 border border-primary/30 rounded-lg">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 p-2.5 sm:p-3 mb-3 sm:mb-4 bg-primary/10 border border-primary/30 rounded-lg">
         <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-xs sm:text-sm font-medium text-green-700 dark:text-green-400">
@@ -49,9 +49,9 @@ export function Chat() {
         )}
       </div>
 
-      <div className="mt-4 sm:mt-10 grid gap-4 sm:gap-6 lg:grid-cols-[280px,1fr]">
+      <div className="mt-3 sm:mt-6 grid gap-3 sm:gap-4 lg:grid-cols-[280px,1fr]">
         <ConversationHistory />
-        <div className="space-y-4 sm:space-y-8">
+        <div className="space-y-3 sm:space-y-5">
           {/* Model downloader (if not ready) */}
           {!isModelReady && (
             <div>
@@ -69,20 +69,20 @@ export function Chat() {
 
           {/* How it works section (only show when model not ready) */}
           {!isModelReady && (
-            <div className="border border-border rounded-lg p-4 sm:p-6">
-              <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-center">
+            <div className="border border-border rounded-lg p-3 sm:p-4">
+              <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 text-center">
                 {lang === 'es' ? '¿Por qué Leaf AI?' : 'Why Leaf AI?'}
               </h2>
 
-              <div className="grid gap-3 sm:gap-4 sm:grid-cols-3">
+              <div className="grid gap-2.5 sm:gap-3 sm:grid-cols-3">
                 <div className="text-center">
-                  <div className="inline-flex p-2 sm:p-3 bg-primary/10 rounded-full mb-2 sm:mb-3">
-                    <Lock className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                  <div className="inline-flex p-1.5 sm:p-2 bg-primary/10 rounded-full mb-1.5 sm:mb-2">
+                    <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   </div>
-                  <h3 className="font-medium mb-0.5 sm:mb-1 text-sm sm:text-base">
+                  <h3 className="font-medium mb-0.5 text-xs sm:text-sm">
                     {lang === 'es' ? 'Privado' : 'Private'}
                   </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground">
+                  <p className="text-[11px] sm:text-xs text-muted-foreground">
                     {lang === 'es'
                       ? 'Tus conversaciones nunca salen de tu dispositivo'
                       : 'Your conversations never leave your device'}
@@ -90,13 +90,13 @@ export function Chat() {
                 </div>
 
                 <div className="text-center">
-                  <div className="inline-flex p-2 sm:p-3 bg-primary/10 rounded-full mb-2 sm:mb-3">
-                    <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                  <div className="inline-flex p-1.5 sm:p-2 bg-primary/10 rounded-full mb-1.5 sm:mb-2">
+                    <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   </div>
-                  <h3 className="font-medium mb-0.5 sm:mb-1 text-sm sm:text-base">
+                  <h3 className="font-medium mb-0.5 text-xs sm:text-sm">
                     {lang === 'es' ? 'Rápido' : 'Fast'}
                   </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground">
+                  <p className="text-[11px] sm:text-xs text-muted-foreground">
                     {lang === 'es'
                       ? 'Funciona sin conexión después de la descarga inicial'
                       : 'Works offline after initial download'}
@@ -104,13 +104,13 @@ export function Chat() {
                 </div>
 
                 <div className="text-center">
-                  <div className="inline-flex p-2 sm:p-3 bg-primary/10 rounded-full mb-2 sm:mb-3">
-                    <Globe className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                  <div className="inline-flex p-1.5 sm:p-2 bg-primary/10 rounded-full mb-1.5 sm:mb-2">
+                    <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   </div>
-                  <h3 className="font-medium mb-0.5 sm:mb-1 text-sm sm:text-base">
+                  <h3 className="font-medium mb-0.5 text-xs sm:text-sm">
                     {lang === 'es' ? 'Accesible' : 'Accessible'}
                   </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground">
+                  <p className="text-[11px] sm:text-xs text-muted-foreground">
                     {lang === 'es'
                       ? 'Gratis y de código abierto para todos'
                       : 'Free and open source for everyone'}
