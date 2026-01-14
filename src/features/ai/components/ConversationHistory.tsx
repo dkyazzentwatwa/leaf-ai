@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Folder, MessageCircle, Pencil, Tag, Trash2 } from 'lucide-react'
+import { Folder, MessageCircle, Pencil, Tag, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { useAIStore } from '../stores/aiStore'
 import { cn } from '@/utils/cn'
 
@@ -19,6 +19,7 @@ export function ConversationHistory() {
   const [query, setQuery] = useState('')
   const [folderFilter, setFolderFilter] = useState('all')
   const [tagFilter, setTagFilter] = useState('all')
+  const [isExpanded, setIsExpanded] = useState(false)
 
   const availableFolders = useMemo(() => {
     const folders = new Set<string>()
@@ -114,21 +115,31 @@ export function ConversationHistory() {
   }
 
   return (
-    <div className="border border-border rounded-lg bg-card p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="border border-border rounded-lg bg-card p-3 sm:p-4 space-y-3 sm:space-y-4">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center justify-between w-full lg:cursor-default"
+      >
+        <div className="text-left">
           <h3 className="text-sm font-semibold">
             {lang === 'es' ? 'Historial de Conversaciones' : 'Conversation History'}
           </h3>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground hidden sm:block">
             {lang === 'es'
               ? 'Busca o cambia entre sesiones guardadas'
               : 'Search or switch between saved chats'}
           </p>
         </div>
-      </div>
+        <div className="lg:hidden">
+          {isExpanded ? (
+            <ChevronUp className="h-5 w-5 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="h-5 w-5 text-muted-foreground" />
+          )}
+        </div>
+      </button>
 
-      <div className="space-y-2">
+      <div className={cn("space-y-2", !isExpanded && "hidden lg:block")}>
         <input
           type="search"
           value={query}
@@ -171,7 +182,7 @@ export function ConversationHistory() {
       </div>
 
       {filteredConversations.length > 0 ? (
-        <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+        <div className={cn("space-y-2 max-h-[420px] overflow-y-auto pr-1", !isExpanded && "hidden lg:block")}>
           {filteredConversations.map((conversation) => (
             <div
               key={conversation.id}
@@ -273,7 +284,7 @@ export function ConversationHistory() {
           ))}
         </div>
       ) : (
-        <div className="text-xs text-muted-foreground text-center py-6">
+        <div className={cn("text-xs text-muted-foreground text-center py-6", !isExpanded && "hidden lg:block")}>
           {lang === 'es'
             ? 'No hay conversaciones guardadas todavía'
             : 'No saved conversations yet'}

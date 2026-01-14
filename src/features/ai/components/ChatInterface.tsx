@@ -713,7 +713,7 @@ export function ChatInterface({
   }
 
   return (
-    <div className="flex flex-col h-[600px] sm:h-[600px] max-h-[85vh] sm:max-h-[80vh] border border-border rounded-lg overflow-hidden bg-background">
+    <div className="flex flex-col h-[calc(100vh-200px)] sm:h-[600px] max-h-[85vh] sm:max-h-[80vh] border border-border rounded-lg overflow-hidden bg-background">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 px-2 sm:px-4 py-2 sm:py-3 border-b border-border bg-muted/30">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
