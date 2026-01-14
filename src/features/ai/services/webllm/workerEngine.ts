@@ -88,7 +88,7 @@ class WorkerEngine {
           reject(new Error('Worker communication error'))
         }
 
-        // Wait for ready signal
+        // Wait for ready signal with timeout
         const readyHandler = (response: WorkerResponse) => {
           if (response.type === 'ready') {
             this.isReady = true
@@ -98,12 +98,13 @@ class WorkerEngine {
         }
         this.on('ready', readyHandler)
 
-        // Timeout after 10 seconds
+        // Timeout after 5 seconds (reduced from 10)
         setTimeout(() => {
           if (!this.isReady) {
-            reject(new Error('Worker initialization timeout'))
+            this.off('ready', readyHandler)
+            reject(new Error('Worker initialization timeout. Your browser may not support WebGPU or Web Workers properly.'))
           }
-        }, 10000)
+        }, 5000)
       } catch (error) {
         reject(error)
       }
@@ -160,21 +161,107 @@ class WorkerEngine {
   }
 
   /**
-   * Check WebGPU support
+   * Check WebGPU support directly (without worker)
    */
-  async checkWebGPUSupport(): Promise<{ supported: boolean; error?: string }> {
-    await this.init()
+  private async checkWebGPUDirectly(): Promise<{ supported: boolean; error?: string }> {
+    // Check for iOS Safari first
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
 
-    return new Promise((resolve) => {
-      const handler = (response: WorkerResponse) => {
-        if (response.type === 'support-result') {
-          this.off('support-result', handler)
-          resolve({ supported: response.supported, error: response.error })
+    if (isIOS) {
+      const iosVersion = navigator.userAgent.match(/OS (\d+)_/)?.[1]
+      return {
+        supported: false,
+        error: `iOS doesn't support WebGPU yet. Please use a desktop browser. (iOS ${iosVersion || 'version unknown'})`
+      }
+    }
+
+    if (isSafari && !isIOS) {
+      // Desktop Safari might work in newer versions
+      const safariVersion = navigator.userAgent.match(/Version\/(\d+)/)?.[1]
+      if (safariVersion && parseInt(safariVersion) < 17) {
+        return {
+          supported: false,
+          error: 'Safari requires version 17 or later for WebGPU support. Please update Safari or use Chrome.'
         }
       }
-      this.on('support-result', handler)
-      this.send({ type: 'check-support' })
-    })
+    }
+
+    // Check for WebGPU API
+    const nav = navigator as Navigator & { gpu?: GPU }
+    if (!nav.gpu) {
+      return {
+        supported: false,
+        error: 'WebGPU is not supported in this browser. Please use Chrome 113+, Edge 113+, or a recent desktop browser.'
+      }
+    }
+
+    try {
+      const adapter = await Promise.race([
+        nav.gpu.requestAdapter(),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000))
+      ])
+
+      if (!adapter) {
+        return {
+          supported: false,
+          error: 'No WebGPU adapter found. Your device may not support WebGPU.'
+        }
+      }
+
+      return { supported: true }
+    } catch (e) {
+      return {
+        supported: false,
+        error: `WebGPU initialization failed: ${e instanceof Error ? e.message : 'Unknown error'}`
+      }
+    }
+  }
+
+  /**
+   * Check WebGPU support (tries direct check first, falls back to worker)
+   */
+  async checkWebGPUSupport(): Promise<{ supported: boolean; error?: string }> {
+    // First, do a quick direct check
+    const directCheck = await this.checkWebGPUDirectly()
+    if (!directCheck.supported) {
+      return directCheck
+    }
+
+    // If direct check passes, verify with worker (with timeout)
+    try {
+      const workerCheckPromise = (async () => {
+        await this.init()
+
+        return new Promise<{ supported: boolean; error?: string }>((resolve) => {
+          const handler = (response: WorkerResponse) => {
+            if (response.type === 'support-result') {
+              this.off('support-result', handler)
+              resolve({ supported: response.supported, error: response.error })
+            }
+          }
+          this.on('support-result', handler)
+          this.send({ type: 'check-support' })
+        })
+      })()
+
+      // Add 5 second timeout for worker check
+      const timeoutPromise = new Promise<{ supported: boolean; error: string }>((resolve) => {
+        setTimeout(() => {
+          resolve({
+            supported: false,
+            error: 'Worker initialization timed out. Your browser may not fully support WebGPU.'
+          })
+        }, 5000)
+      })
+
+      return await Promise.race([workerCheckPromise, timeoutPromise])
+    } catch (error) {
+      return {
+        supported: false,
+        error: error instanceof Error ? error.message : 'Failed to verify WebGPU support'
+      }
+    }
   }
 
   /**

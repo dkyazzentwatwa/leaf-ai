@@ -140,21 +140,36 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
 
   // WebGPU not supported
   if (webGPUSupported === false) {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+
     return (
       <div className={cn(
-        'border border-destructive/50 bg-destructive/10 rounded-lg p-4',
-        compact && 'p-3'
+        'border border-destructive/50 bg-destructive/10 rounded-lg p-3 sm:p-4',
+        compact && 'p-2 sm:p-3'
       )}>
-        <div className="flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
+        <div className="flex items-start gap-2 sm:gap-3">
+          <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-destructive mt-0.5 flex-shrink-0" />
           <div>
-            <h3 className="font-semibold text-destructive">AI Features Unavailable</h3>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h3 className="font-semibold text-destructive text-sm sm:text-base">AI Features Unavailable</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               {webGPUError || 'Your browser does not support WebGPU, which is required for local AI.'}
             </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Please use <strong>Chrome 113+</strong> or <strong>Edge 113+</strong> on a device with a compatible GPU.
-            </p>
+            {isIOS && (
+              <p className="text-xs sm:text-sm text-muted-foreground mt-2">
+                <strong>iOS users:</strong> Please use this app on a desktop/laptop computer with Chrome or Edge.
+              </p>
+            )}
+            {isMobile && !isIOS && (
+              <p className="text-xs sm:text-sm text-muted-foreground mt-2">
+                <strong>Mobile users:</strong> Try Chrome for Android, or use a desktop browser for best results.
+              </p>
+            )}
+            {!isMobile && (
+              <p className="text-xs sm:text-sm text-muted-foreground mt-2">
+                Please use <strong>Chrome 113+</strong>, <strong>Edge 113+</strong>, or another browser with WebGPU support.
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -164,10 +179,10 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
   // Loading state for WebGPU check
   if (webGPUSupported === null) {
     return (
-      <div className={cn('border border-border rounded-lg p-4', compact && 'p-3')}>
-        <div className="flex items-center gap-3">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          <span className="text-muted-foreground">Checking AI compatibility...</span>
+      <div className={cn('border border-border rounded-lg p-3 sm:p-4', compact && 'p-2 sm:p-3')}>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin text-muted-foreground" />
+          <span className="text-sm sm:text-base text-muted-foreground">Checking AI compatibility...</span>
         </div>
       </div>
     )
