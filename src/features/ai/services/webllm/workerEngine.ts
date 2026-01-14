@@ -7,6 +7,7 @@
 
 import type { WorkerRequest, WorkerResponse } from '../../workers/types'
 import type { ModelId, ModelLoadProgress, ChatMessage, GenerateOptions } from './engine'
+import { AVAILABLE_MODELS } from './engine'
 
 type MessageHandler = (response: WorkerResponse) => void
 
@@ -433,7 +434,6 @@ class WorkerEngine {
       return { valid: true } // Capabilities not checked yet, allow attempt
     }
 
-    const { AVAILABLE_MODELS } = require('./engine')
     const modelInfo = AVAILABLE_MODELS[modelId]
 
     if (!modelInfo) {
