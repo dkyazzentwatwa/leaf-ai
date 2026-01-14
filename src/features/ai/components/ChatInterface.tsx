@@ -411,9 +411,9 @@ export function ChatInterface({
         index: number
       } | null = null
 
-      patterns.forEach((pattern) => {
+      for (const pattern of patterns) {
         const match = remaining.match(pattern.regex)
-        if (!match || match.index === undefined) return
+        if (!match || match.index === undefined) continue
         if (!earliestMatch || match.index < earliestMatch.index) {
           earliestMatch = {
             type: pattern.type,
@@ -421,7 +421,7 @@ export function ChatInterface({
             index: match.index,
           }
         }
-      })
+      }
 
       if (!earliestMatch) {
         nodes.push(remaining)
@@ -565,15 +565,28 @@ export function ChatInterface({
       if (headingMatch) {
         flushList()
         const level = headingMatch[1].length
-        const HeadingTag = (`h${Math.min(level + 1, 6)}`) as keyof JSX.IntrinsicElements
-        elements.push(
-          <HeadingTag
-            key={`${keyPrefix}-heading-${lineIndex}`}
-            className="font-semibold mt-2"
-          >
-            {renderInline(headingMatch[2], `${keyPrefix}-heading-${lineIndex}`)}
-          </HeadingTag>
-        )
+        const headingLevel = Math.min(level + 1, 6) as 2 | 3 | 4 | 5 | 6
+        const headingContent = renderInline(headingMatch[2], `${keyPrefix}-heading-${lineIndex}`)
+        const headingKey = `${keyPrefix}-heading-${lineIndex}`
+        const headingClass = "font-semibold mt-2"
+
+        switch (headingLevel) {
+          case 2:
+            elements.push(<h2 key={headingKey} className={headingClass}>{headingContent}</h2>)
+            break
+          case 3:
+            elements.push(<h3 key={headingKey} className={headingClass}>{headingContent}</h3>)
+            break
+          case 4:
+            elements.push(<h4 key={headingKey} className={headingClass}>{headingContent}</h4>)
+            break
+          case 5:
+            elements.push(<h5 key={headingKey} className={headingClass}>{headingContent}</h5>)
+            break
+          case 6:
+            elements.push(<h6 key={headingKey} className={headingClass}>{headingContent}</h6>)
+            break
+        }
         return
       }
 
