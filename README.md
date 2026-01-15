@@ -66,17 +66,20 @@ npm run test         # Run tests with Vitest
 
 ## 🧠 Available AI Models
 
-### Desktop Models (1-7GB)
-- **Llama 3.2 3B** - Recommended for most users
-- **Phi 3.5 Mini** - Fast and efficient
-- **Gemma 3 12B** - Advanced reasoning (requires 16GB+ RAM)
+### Desktop/Android Models (1-3GB)
+- **Llama 3.2 3B** (~2.3GB) - Recommended, best quality (3-7 tok/sec)
+- **Gemma 2 2B** (~1.9GB) - Google's efficient model (3-6 tok/sec)
+- **Phi 3.5 Mini** (~1.5GB) - Good balance (4-6 tok/sec)
+- **Llama 3.2 1B** (~1.1GB) - Compact and fast (5-8 tok/sec)
+- **Qwen 2.5 1.5B** (~1GB) - Smallest full model (5-7 tok/sec)
 
-### iOS Models (<400MB)
-- **SmolLM2 135M** - Ultra-compact
-- **Gemma 3 1B** - Balanced performance
-- **TinyLlama 1.1B** - Smallest viable model
+### iOS Models (<1GB)
+- **SmolLM2 135M** (~360MB, 2-bit) - Recommended for iOS, ultra-compact (2-3 tok/sec)
+- **SmolLM2 360M** (~376MB, 4-bit) - Small and efficient (2-3 tok/sec)
+- **TinyLlama 1.1B** (~697MB, 4-bit) - Better quality (1-2 tok/sec)
+- **Qwen 2.5 0.5B** (~945MB, 4-bit) - Best iOS quality (1-2 tok/sec)
 
-All models are 4-bit or 2-bit quantized for optimal performance.
+All models use 4-bit or 2-bit quantization for optimal performance and memory efficiency.
 
 ## 🛠 Technology Stack
 
