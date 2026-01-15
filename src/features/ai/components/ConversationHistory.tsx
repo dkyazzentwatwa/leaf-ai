@@ -139,23 +139,23 @@ export function ConversationHistory() {
         </div>
       </button>
 
-      <div className={cn("space-y-2", !isExpanded && "hidden lg:block")}>
+      <div className={cn("space-y-2 sm:space-y-3", !isExpanded && "hidden lg:block")}>
         <input
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={lang === 'es' ? 'Buscar conversaciones...' : 'Search conversations...'}
-          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+          className="w-full rounded-md border border-border bg-background px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm"
         />
-        <div className="grid gap-2 text-xs sm:grid-cols-2">
-          <label className="flex flex-col gap-1">
+        <div className="grid gap-1.5 sm:gap-2 text-xs sm:grid-cols-2">
+          <label className="flex flex-col gap-1 sm:gap-1.5">
             <span className="text-muted-foreground">
               {lang === 'es' ? 'Carpeta' : 'Folder'}
             </span>
             <select
               value={folderFilter}
               onChange={(event) => setFolderFilter(event.target.value)}
-              className="rounded-md border border-border bg-background px-2 py-1"
+              className="rounded-md border border-border bg-background px-1.5 sm:px-2 py-1.5 sm:py-2 text-xs sm:text-sm"
             >
               <option value="all">{lang === 'es' ? 'Todas' : 'All'}</option>
               {availableFolders.map((folder) => (
@@ -163,14 +163,14 @@ export function ConversationHistory() {
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1">
+          <label className="flex flex-col gap-1 sm:gap-1.5">
             <span className="text-muted-foreground">
               {lang === 'es' ? 'Etiqueta' : 'Tag'}
             </span>
             <select
               value={tagFilter}
               onChange={(event) => setTagFilter(event.target.value)}
-              className="rounded-md border border-border bg-background px-2 py-1"
+              className="rounded-md border border-border bg-background px-1.5 sm:px-2 py-1.5 sm:py-2 text-xs sm:text-sm"
             >
               <option value="all">{lang === 'es' ? 'Todas' : 'All'}</option>
               {availableTags.map((tag) => (
@@ -182,7 +182,7 @@ export function ConversationHistory() {
       </div>
 
       {filteredConversations.length > 0 ? (
-        <div className={cn("space-y-2 max-h-[420px] overflow-y-auto pr-1", !isExpanded && "hidden lg:block")}>
+        <div className={cn("space-y-2 max-h-[40vh] sm:max-h-[420px] overflow-y-auto pr-1", !isExpanded && "hidden lg:block")}>
           {filteredConversations.map((conversation) => (
             <div
               key={conversation.id}

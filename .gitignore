@@ -32,3 +32,10 @@ workbox-*.js
 .env
 .env.local
 .env.production
+
+# Test results
+tests/results/
+test-results/
+playwright-report/
+*.bench.json
+test-output.log
