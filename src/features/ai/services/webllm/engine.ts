@@ -69,14 +69,14 @@ export const AVAILABLE_MODELS = {
     quantization: 'q4f16_1',
   },
   'gemma-2-2b-it-q4f16_1-MLC': {
-    name: 'Gemma 2 2B (q4) - TEST',
-    description: 'EXPERIMENTAL: Testing on iOS - likely to crash',
+    name: 'Gemma 2 2B (q4)',
+    description: 'Google\'s efficient 4-bit model (Desktop/Android)',
     size: '~1.9GB',
     recommended: false,
     minRAM: 3,
-    iosOnly: true, // TESTING: Changed to true for iOS testing
+    iosOnly: false,
     maxBufferSizeMB: 1900,
-    performance: '3-6 tok/sec (Desktop) / May crash (iOS)',
+    performance: '3-6 tok/sec',
     quantization: 'q4f16_1',
   },
   'Llama-3.2-1B-Instruct-q4f32_1-MLC': {
