@@ -34,8 +34,9 @@ import { safePrompt } from '@/utils/userInput'
 import { useWebLLM } from '../hooks/useWebLLM'
 import { useAIStore, selectActiveConversation } from '../stores/aiStore'
 import { AVAILABLE_MODELS } from '../services/webllm/engine'
-import { CONVERSATION_STARTERS, type AssistantType } from '../services/webllm/prompts'
+import { CONVERSATION_STARTERS, type AssistantType, BUILT_IN_PERSONAS } from '../services/webllm/prompts'
 import { ModelDownloader } from './ModelDownloader'
+import { PersonaSelector } from './PersonaSelector'
 import { cn } from '@/utils/cn'
 import { useToastStore } from '@/stores/toastStore'
 
@@ -64,18 +65,6 @@ export function ChatInterface({
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const {
-    isModelReady,
-    isGenerating,
-    generationError,
-    loadModel,
-    sendMessage,
-    generateReply,
-    stopGeneration,
-    resetChat,
-    getStats,
-  } = useWebLLM({ assistantType, context })
-
   const activeConversation = useAIStore(selectActiveConversation)
   const createConversation = useAIStore((s) => s.createConversation)
   const updateMessage = useAIStore((s) => s.updateMessage)
@@ -90,7 +79,37 @@ export function ChatInterface({
   const preferredModel = useAIStore((s) => s.preferredModel)
   const setPreferredModel = useAIStore((s) => s.setPreferredModel)
   const currentModel = useAIStore((s) => s.currentModel)
+  const activePersonaId = useAIStore((s) => s.activePersonaId)
+  const setActivePersona = useAIStore((s) => s.setActivePersona)
+  const setConversationPersona = useAIStore((s) => s.setConversationPersona)
+  const customPersonas = useAIStore((s) => s.customPersonas)
   const addToast = useToastStore((s) => s.addToast)
+
+  // Determine which persona to use (conversation's persona or active persona)
+  const conversationPersonaId = activeConversation?.personaId || activePersonaId
+  const allPersonas = [...Object.values(BUILT_IN_PERSONAS), ...customPersonas]
+  const activePersona = allPersonas.find((p) => p.id === conversationPersonaId)
+
+  // Use persona's ID as assistantType for built-in personas, or use prop for custom
+  const effectiveAssistantType = (activePersona?.isBuiltIn
+    ? activePersona.id as AssistantType
+    : assistantType) as AssistantType
+
+  const {
+    isModelReady,
+    isGenerating,
+    generationError,
+    loadModel,
+    sendMessage,
+    generateReply,
+    stopGeneration,
+    resetChat,
+    getStats,
+  } = useWebLLM({
+    assistantType: effectiveAssistantType,
+    context,
+    customPersona: activePersona && !activePersona.isBuiltIn ? activePersona : undefined,
+  })
 
   const messages = activeConversation?.messages || []
   const starters = CONVERSATION_STARTERS[assistantType]?.[lang] || []
@@ -295,6 +314,7 @@ export function ChatInterface({
     setInput('')
 
     const conversationId = createConversation(assistantType)
+    setConversationPersona(conversationId, activePersonaId)  // NEW: Set persona
     await resetChat()
 
     const promptText = lang === 'es'
@@ -772,6 +792,18 @@ export function ChatInterface({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+          <label className="flex items-center gap-1 sm:gap-2 text-xs text-muted-foreground">
+            <span className="hidden sm:inline">{lang === 'es' ? 'Persona' : 'Persona'}</span>
+            <PersonaSelector
+              value={conversationPersonaId}
+              onChange={(personaId) => {
+                if (activeConversation) {
+                  setConversationPersona(activeConversation.id, personaId)
+                }
+                setActivePersona(personaId)
+              }}
+            />
+          </label>
           <label className="flex items-center gap-1 sm:gap-2 text-xs text-muted-foreground">
             <span className="hidden sm:inline">{lang === 'es' ? 'Modelo' : 'Model'}</span>
             <select

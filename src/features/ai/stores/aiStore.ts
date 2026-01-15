@@ -7,13 +7,12 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { ModelId, ModelLoadProgress, ChatMessage } from '../services/webllm/engine'
-import type { AssistantType } from '../services/webllm/prompts'
+import type { AssistantType, Persona } from '../services/webllm/prompts'
 import { secureDeleteConversation } from '@/utils/secureDelete'
 
 export interface StoredMessage extends ChatMessage {
   id: string
   bookmarked?: boolean
-  reaction?: 'up' | 'down'
 }
 
 export interface Conversation {
@@ -26,6 +25,7 @@ export interface Conversation {
   folder?: string
   tags?: string[]
   modelId?: ModelId
+  personaId?: string
 }
 
 export interface PromptTemplate {
@@ -56,6 +56,10 @@ interface AIState {
   encryptionEnabled: boolean
   isUnlocked: boolean
 
+  // Persona state
+  customPersonas: Persona[]
+  activePersonaId: string
+
   // Actions
   setModelStatus: (status: AIState['modelStatus']) => void
   setModelProgress: (progress: ModelLoadProgress | null) => void
@@ -77,11 +81,6 @@ interface AIState {
     options?: { deleteFollowingAssistant?: boolean }
   ) => void
   toggleBookmark: (conversationId: string, messageIndex: number) => void
-  setReaction: (
-    conversationId: string,
-    messageIndex: number,
-    reaction: 'up' | 'down' | null
-  ) => void
   setActiveConversation: (id: string | null) => void
   deleteConversation: (id: string) => void
   clearAllConversations: () => void
@@ -98,6 +97,13 @@ interface AIState {
   setEncryptionEnabled: (enabled: boolean) => void
   setIsUnlocked: (unlocked: boolean) => void
   lockApp: () => void
+
+  // Persona actions
+  addCustomPersona: (persona: Omit<Persona, 'id' | 'isBuiltIn'>) => string
+  updateCustomPersona: (id: string, updates: Partial<Persona>) => void
+  deleteCustomPersona: (id: string) => void
+  setActivePersona: (personaId: string) => void
+  setConversationPersona: (conversationId: string, personaId: string) => void
 
   reset: () => void
 }
@@ -118,6 +124,8 @@ const initialState = {
   lastModelLoadMs: null,
   encryptionEnabled: false,
   isUnlocked: true,
+  customPersonas: [],
+  activePersonaId: 'general',
 }
 
 export const useAIStore = create<AIState>()(
@@ -303,25 +311,6 @@ export const useAIStore = create<AIState>()(
         }))
       },
 
-      setReaction: (conversationId, messageIndex, reaction) => {
-        set((state) => ({
-          conversations: state.conversations.map((conv) => {
-            if (conv.id !== conversationId) return conv
-
-            const messages = [...conv.messages]
-            const target = messages[messageIndex]
-            if (!target) return conv
-
-            messages[messageIndex] = {
-              ...target,
-              reaction: target.reaction === reaction ? undefined : reaction || undefined,
-            }
-
-            return { ...conv, messages, updatedAt: Date.now() }
-          }),
-        }))
-      },
-
       setActiveConversation: (id) => set({ activeConversationId: id }),
 
       deleteConversation: (id) => {
@@ -369,6 +358,46 @@ export const useAIStore = create<AIState>()(
       setIsUnlocked: (unlocked) => set({ isUnlocked: unlocked }),
       lockApp: () => set({ isUnlocked: false }),
 
+      // Persona actions
+      addCustomPersona: (persona) => {
+        const id = `custom-${Date.now()}`
+        const newPersona: Persona = {
+          ...persona,
+          id,
+          isBuiltIn: false,
+        }
+        set((state) => ({
+          customPersonas: [...state.customPersonas, newPersona],
+        }))
+        return id
+      },
+
+      updateCustomPersona: (id, updates) => {
+        set((state) => ({
+          customPersonas: state.customPersonas.map((p) =>
+            p.id === id ? { ...p, ...updates } : p
+          ),
+        }))
+      },
+
+      deleteCustomPersona: (id) => {
+        set((state) => ({
+          customPersonas: state.customPersonas.filter((p) => p.id !== id),
+          // If active persona is deleted, switch to general
+          activePersonaId: state.activePersonaId === id ? 'general' : state.activePersonaId,
+        }))
+      },
+
+      setActivePersona: (personaId) => set({ activePersonaId: personaId }),
+
+      setConversationPersona: (conversationId, personaId) => {
+        set((state) => ({
+          conversations: state.conversations.map((conv) =>
+            conv.id === conversationId ? { ...conv, personaId } : conv
+          ),
+        }))
+      },
+
       // Reset
       reset: () => set(initialState),
     }),
@@ -382,6 +411,8 @@ export const useAIStore = create<AIState>()(
         privacyMode: state.privacyMode,
         promptTemplates: state.promptTemplates,
         encryptionEnabled: state.encryptionEnabled,
+        customPersonas: state.customPersonas,
+        activePersonaId: state.activePersonaId,
         // Note: isUnlocked is NOT persisted - app starts locked if encryption enabled
       }),
     }

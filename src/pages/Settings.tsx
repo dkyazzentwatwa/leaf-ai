@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { ModelManager } from '@/features/ai/components/ModelManager'
 import { ModelDownloader } from '@/features/ai/components/ModelDownloader'
+import { PersonaManager } from '@/features/ai/components/PersonaManager'
 import { useWebLLM } from '@/features/ai/hooks/useWebLLM'
 import { useAIStore, selectIsModelReady, selectModelStatus } from '@/features/ai/stores/aiStore'
 import { useToastStore } from '@/stores/toastStore'
@@ -305,6 +306,13 @@ export function Settings() {
               {lang === 'es' ? 'Sin plantillas guardadas.' : 'No templates saved yet.'}
             </p>
           )}
+        </div>
+      </section>
+
+      {/* AI Personas */}
+      <section className="mb-8">
+        <div className="border border-border rounded-lg p-4 bg-card">
+          <PersonaManager />
         </div>
       </section>
 

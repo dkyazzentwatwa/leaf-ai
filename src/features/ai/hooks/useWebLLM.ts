@@ -10,7 +10,7 @@ import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { unifiedEngine } from '../services/unifiedEngine'
 import type { ModelId, ChatMessage, GenerateOptions } from '../services/webllm/engine'
-import { getSystemPrompt, type AssistantType } from '../services/webllm/prompts'
+import { getSystemPrompt, type AssistantType, type Persona } from '../services/webllm/prompts'
 import {
   useAIStore,
   selectIsModelReady,
@@ -21,10 +21,11 @@ import {
 interface UseWebLLMOptions {
   assistantType?: AssistantType
   context?: string
+  customPersona?: Persona  // NEW: Support custom personas
 }
 
 export function useWebLLM(options: UseWebLLMOptions = {}) {
-  const { assistantType = 'general', context } = options
+  const { assistantType = 'general', context, customPersona } = options
   const { i18n } = useTranslation()
   const lang = (i18n.language === 'es' ? 'es' : 'en') as 'en' | 'es'
 
@@ -155,7 +156,12 @@ export function useWebLLM(options: UseWebLLMOptions = {}) {
       }))
 
       // Build messages array with system prompt
-      const systemPrompt = getSystemPrompt({ type: assistantType, language: lang, context })
+      const systemPrompt = getSystemPrompt({
+        type: assistantType,
+        language: lang,
+        context,
+        customPersona,  // NEW: Pass custom persona
+      })
       const messages: ChatMessage[] = [
         { role: 'system', content: systemPrompt },
         ...existingMessages,
@@ -239,7 +245,12 @@ export function useWebLLM(options: UseWebLLMOptions = {}) {
       setIsGenerating(true)
       setGenerationError(null)
 
-      const systemPrompt = getSystemPrompt({ type: assistantType, language: lang, context })
+      const systemPrompt = getSystemPrompt({
+        type: assistantType,
+        language: lang,
+        context,
+        customPersona,  // NEW: Pass custom persona
+      })
       const messages: ChatMessage[] = [
         { role: 'system', content: systemPrompt },
         ...conversation.messages.map((message) => ({
