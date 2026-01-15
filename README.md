@@ -1,23 +1,21 @@
-# Rights Shield
+# 🍃 Leaf AI
 
-Privacy-first activist resource platform for immigration rights, digital security, and community defense.
+**Your private AI assistant, running entirely in your browser**
 
-## 🌟 Features
+Leaf AI is a privacy-first, browser-based AI assistant that runs 100% locally using WebGPU. No servers, no tracking, no cloud dependencies - just you and AI, privately.
 
-- **Immigration Rights**: Know Your Rights guidance for ICE encounters
-- **Digital Security**: Privacy and security checklists for activists
-- **Activism Tools**: Organizing and protest resources
-- **AI Assistant**: Local AI-powered rights guidance (coming in Phase 4)
-- **AI Defense**: Protection from surveillance tech (coming in Phase 6)
+Built with ❤️ by [the AI Flow Club](https://flow-club.techtiff.ai/)
 
-## 🔒 Privacy-First Design
+## ✨ Features
 
-- ✅ No user accounts or tracking
-- ✅ No analytics or data collection
-- ✅ Works 100% offline after initial load
-- ✅ AI runs locally in your browser (no cloud)
-- ✅ All data stays on your device
-- ✅ Open source (AGPLv3)
+- 🔒 **Complete Privacy**: All AI processing happens on your device. No data ever leaves your browser.
+- ⚡ **WebGPU Acceleration**: Hardware-accelerated inference using WebGPU for fast responses
+- 📱 **Mobile Support**: iOS 26+ with optimized small models for mobile devices
+- 💾 **Offline-First**: Works completely offline after initial model download
+- 🌍 **Multi-language**: English and Spanish support
+- 💬 **Conversation Management**: Organize chats with folders, tags, and search
+- 📤 **Export**: Export conversations as Markdown or JSON
+- 🎨 **Dark Mode**: Beautiful dark theme support
 
 ## 🚀 Quick Start
 
@@ -26,149 +24,188 @@ Privacy-first activist resource platform for immigration rights, digital securit
 - Node.js 18+
 - npm or yarn
 
-### Browser Compatibility
-
-For the best experience with AI features:
-- **Recommended**: Chrome 113+, Edge 113+, or Brave (latest)
-- **Supported**: Any WebGPU-compatible browser
-- **iOS/Mobile**: Local AI not yet available (cloud AI mode coming soon)
-
-See [WEBGPU_COMPATIBILITY.md](WEBGPU_COMPATIBILITY.md) for full compatibility details.
-
 ### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/dkyazzentwatwa/leaf-ai.git
+cd leaf-ai
+
 # Install dependencies
 npm install
 
 # Start development server
 npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
 ```
 
-### Development
-
 The app will be available at `http://localhost:5173/`
+
+### Available Commands
+
+```bash
+npm run dev          # Start dev server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run lint         # Run ESLint
+npm run test         # Run tests with Vitest
+```
+
+## 🌐 Browser Compatibility
+
+### Desktop/Android
+- ✅ Chrome 113+ (recommended)
+- ✅ Edge 113+
+- ✅ Brave (latest)
+- ✅ Any WebGPU-compatible browser
+
+### iOS/iPadOS
+- ✅ Safari 26+ / iOS 26+ (WebGPU support)
+- ⚠️ iOS <26: WebGPU not available
+
+**Note**: iOS has strict memory constraints (~1.5GB WebContent limit). Leaf AI automatically detects iOS and offers only compatible ultra-small models (<400MB).
+
+## 🧠 Available AI Models
+
+### Desktop Models (1-7GB)
+- **Llama 3.2 3B** - Recommended for most users
+- **Phi 3.5 Mini** - Fast and efficient
+- **Gemma 3 12B** - Advanced reasoning (requires 16GB+ RAM)
+
+### iOS Models (<400MB)
+- **SmolLM2 135M** - Ultra-compact
+- **Gemma 3 1B** - Balanced performance
+- **TinyLlama 1.1B** - Smallest viable model
+
+All models are 4-bit or 2-bit quantized for optimal performance.
+
+## 🛠 Technology Stack
+
+- **Framework**: Vite + React 19 + TypeScript
+- **AI Engine**: [WebLLM](https://github.com/mlc-ai/web-llm) (@mlc-ai/web-llm)
+- **Acceleration**: WebGPU
+- **Styling**: Tailwind CSS + shadcn/ui
+- **State Management**: Zustand with localStorage persistence
+- **Database**: IndexedDB (Dexie) for conversation history
+- **i18n**: i18next + react-i18next (English, Spanish)
+- **PWA**: vite-plugin-pwa (Workbox)
+- **Router**: React Router v7
+
+## 🏗 Architecture
+
+### AI Engine Flow
+
+```
+User Request
+    ↓
+ChatInterface (React)
+    ↓
+useWebLLM (React hook)
+    ↓
+unifiedEngine (singleton wrapper)
+    ↓
+workerEngine (Web Worker manager)
+    ↓
+ai.worker.ts (separate thread)
+    ↓
+WebLLM (@mlc-ai/web-llm)
+    ↓
+WebGPU (hardware acceleration)
+```
+
+### Key Components
+
+- **`unifiedEngine`**: Main entry point for all AI operations
+- **`workerEngine`**: Manages Web Worker communication and device detection
+- **`engine.ts`**: Central model registry with platform-specific filtering
+- **`aiStore`**: Zustand store for conversations and model state
+
+See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation.
+
+## 🔐 Privacy Philosophy
+
+Leaf AI is built on these non-negotiable principles:
+
+- ✅ No data sent to external servers
+- ✅ No tracking or analytics
+- ✅ No user accounts
+- ✅ All processing happens locally
+- ✅ Open source and auditable
+
+If a feature requires external communication, it doesn't belong in this project.
 
 ## 📁 Project Structure
 
 ```
 src/
-├── core/               # Core infrastructure
-│   ├── config/         # App configuration, i18n
-│   ├── db/             # IndexedDB schema (Dexie)
-│   ├── pwa/            # Service worker logic
-│   └── router/         # React Router configuration
+├── features/ai/           # AI feature module
+│   ├── components/        # Chat UI, model downloader
+│   ├── hooks/             # useWebLLM hook
+│   ├── services/          # AI engine, WebLLM integration
+│   ├── stores/            # Zustand state management
+│   └── workers/           # Web Workers for AI
 │
-├── features/           # Feature modules
-│   ├── immigration/    # Immigration rights content
-│   ├── security/       # Digital security checklists
-│   ├── activism/       # Activism tools
-│   ├── ai/             # AI assistant
-│   ├── ai-defense/     # AI surveillance defense
-│   └── common/         # Shared feature components
+├── components/            # Shared UI components
+│   ├── layout/            # Header, footer, layout
+│   └── ui/                # shadcn/ui components
 │
-├── components/         # Shared UI components
-│   ├── ui/             # shadcn/ui components
-│   ├── layout/         # Header, footer, navigation
-│   └── primitives/     # Reusable UI elements
+├── core/                  # Core infrastructure
+│   ├── config/            # App configuration
+│   ├── db/                # IndexedDB schema
+│   └── router/            # React Router setup
 │
-├── pages/              # Route pages
-├── hooks/              # Global React hooks
-├── stores/             # Zustand state stores
-├── utils/              # Utility functions
-└── assets/             # Static assets & translations
+├── pages/                 # Route pages
+├── utils/                 # Utility functions
+└── assets/                # Locales, static assets
 ```
 
-## 🛠 Technology Stack
+## 🚢 Deployment
 
-- **Framework**: Vite + React 19 + TypeScript
-- **Routing**: React Router v7
-- **Styling**: Tailwind CSS + shadcn/ui
-- **State**: Zustand + React Query
-- **Database**: Dexie (IndexedDB)
-- **i18n**: i18next + react-i18next
-- **PWA**: vite-plugin-pwa (Workbox)
-- **AI** (Phase 4): WebLLM + Transformers.js
+### Required Headers
 
-## 📖 Implementation Roadmap
+For WebLLM to work, these headers are **required**:
 
-### ✅ Phase 1: Foundation (COMPLETED)
-- [x] Vite + React + TypeScript setup
-- [x] PWA configuration
-- [x] Tailwind CSS + shadcn/ui
-- [x] React Router with core routes
-- [x] i18n (English/Spanish)
-- [x] IndexedDB schema
-- [x] App shell (header, nav, footer)
-- [x] Offline detection
-- [x] Basic pages for all routes
+```
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp
+```
 
-### 🔄 Phase 2: Digital Security Module (CURRENT)
-- [ ] Write original security checklists
-- [ ] Checklist viewer UI
-- [ ] Progress tracking
-- [ ] Print-friendly views
-- [ ] Local keyword search
+These are configured in:
+- `vite.config.ts` (dev/preview)
+- `public/_headers` (production - Netlify format)
 
-### 📋 Phase 3: Immigration Rights Module
-- [ ] Know Your Rights scenarios
-- [ ] Red card generator
-- [ ] Emergency hotlines database
-- [ ] Multi-language content
-- [ ] Preparedness planner
+Without these headers, SharedArrayBuffer and Web Workers will fail.
 
-### 🤖 Phase 4: AI Infrastructure
-- [ ] WebLLM integration
-- [ ] Model downloader UI
-- [ ] Web Worker setup
-- [ ] Basic chatbot interface
-- [ ] Transformers.js semantic search
+### Netlify Deployment
 
-### 🎯 Phase 5-8: Additional Features & Polish
-- See [Implementation Plan](/Users/cypher/.claude/plans/robust-questing-frost.md) for details
-
-## 🌐 Languages
-
-- English (primary)
-- Spanish (es)
-- More languages planned (French, Arabic, Chinese, Vietnamese)
+1. Push to GitHub
+2. Connect to Netlify
+3. Build command: `npm run build`
+4. Publish directory: `dist`
+5. Headers are auto-configured via `public/_headers`
 
 ## 🤝 Contributing
 
-Rights Shield is open source and welcomes contributions!
+Contributions are welcome! Whether it's bug fixes, new features, or documentation improvements.
 
-- **Content**: Help write security checklists, immigration guides
-- **Translations**: Add support for more languages
-- **Code**: Fix bugs, add features, improve accessibility
-- **Design**: UI/UX improvements
+### Development Guidelines
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines (coming soon).
+- Follow the existing code style
+- Use TypeScript for all new code
+- Mobile-first responsive design (use `sm:`, `md:`, `lg:` breakpoints)
+- Add Spanish translations for user-facing text
+- Respect the privacy-first philosophy
 
 ## 📄 License
 
-AGPLv3 - See [LICENSE](LICENSE) for details
-
-Built with ❤️ by activists, for activists.
-
-## ⚖️ Legal Disclaimer
-
-This platform provides educational information about your rights, not legal advice.
-For specific situations, always consult with a qualified attorney.
+MIT License - See [LICENSE](LICENSE) for details
 
 ## 🔗 Links
 
-- [GitHub Repository](#) (TBD)
-- [Issue Tracker](#) (TBD)
-- [Deployment](https://rights-shield.app) (TBD)
+- **GitHub**: [https://github.com/dkyazzentwatwa/leaf-ai](https://github.com/dkyazzentwatwa/leaf-ai)
+- **Made by**: [the AI Flow Club](https://flow-club.techtiff.ai/)
 
 ---
 
-**Version**: 0.1.0 (Phase 1 Foundation)
-**Status**: Active Development
-**License**: AGPLv3
+**Built with ❤️ for a more private world**
+
+Made by [the AI Flow Club](https://flow-club.techtiff.ai/)
