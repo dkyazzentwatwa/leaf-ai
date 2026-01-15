@@ -205,6 +205,17 @@ export function About() {
                     </p>
                   </div>
                 </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-orange-500 mt-1">⚠</span>
+                  <div>
+                    <strong className="text-foreground">Gemma 2 2B (q4) - TEST</strong> - ~1.9GB
+                    <p className="text-xs mt-0.5 text-orange-600 dark:text-orange-400">
+                      {lang === 'es'
+                        ? '⚠️ EXPERIMENTAL: Excede límites de iOS. Probablemente fallará. Solo para pruebas.'
+                        : '⚠️ EXPERIMENTAL: Exceeds iOS limits. Will likely crash. Testing only.'}
+                    </p>
+                  </div>
+                </li>
               </ul>
             </div>
 
@@ -222,17 +233,6 @@ export function About() {
                       {lang === 'es'
                         ? 'Mejor calidad, recomendado para escritorio. 3-7 tok/seg.'
                         : 'Best quality, recommended for desktop. 3-7 tok/sec.'}
-                    </p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <div>
-                    <strong className="text-foreground">Gemma 2 2B (q4)</strong> - ~1.9GB
-                    <p className="text-xs mt-0.5">
-                      {lang === 'es'
-                        ? 'Modelo eficiente de Google. 3-6 tok/seg.'
-                        : 'Google\'s efficient model. 3-6 tok/sec.'}
                     </p>
                   </div>
                 </li>
@@ -276,8 +276,8 @@ export function About() {
               <p className="text-xs sm:text-sm">
                 <strong className="text-foreground">{lang === 'es' ? 'Nota:' : 'Note:'}</strong>{' '}
                 {lang === 'es'
-                  ? 'Todos los modelos usan cuantización de 4 bits (q4f16) o 2 bits (q0f16) para máxima eficiencia. Los modelos se descargan una vez y se almacenan en caché localmente. El modelo Qwen 0.5B es experimental en iOS y puede causar problemas de memoria en dispositivos más antiguos.'
-                  : 'All models use 4-bit (q4f16) or 2-bit (q0f16) quantization for maximum efficiency. Models download once and cache locally. The Qwen 0.5B model is experimental on iOS and may cause memory issues on older devices.'}
+                  ? 'Todos los modelos usan cuantización de 4 bits (q4f16) o 2 bits (q0f16) para máxima eficiencia. Los modelos se descargan una vez y se almacenan en caché localmente. El modelo Qwen 0.5B es experimental en iOS y puede causar problemas de memoria. El modelo Gemma 2 2B (1.9GB) excede los límites de iOS y probablemente fallará - solo disponible para pruebas.'
+                  : 'All models use 4-bit (q4f16) or 2-bit (q0f16) quantization for maximum efficiency. Models download once and cache locally. The Qwen 0.5B model is experimental on iOS and may cause memory issues. The Gemma 2 2B model (1.9GB) exceeds iOS limits and will likely crash - available for testing only.'}
               </p>
             </div>
           </div>
