@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Leaf, Lock, Cpu, Zap, Globe } from 'lucide-react'
+import { Lock, Zap, Globe } from 'lucide-react'
 import { ChatInterface } from '@/features/ai/components/ChatInterface'
 import { ModelDownloader } from '@/features/ai/components/ModelDownloader'
 import { ConversationHistory } from '@/features/ai/components/ConversationHistory'
