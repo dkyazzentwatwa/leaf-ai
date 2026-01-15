@@ -10,6 +10,8 @@ export default defineConfig({
       // Required for SharedArrayBuffer and WebGPU
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',
+      // Content Security Policy for XSS protection
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://huggingface.co blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';",
     },
   },
   preview: {
@@ -17,6 +19,8 @@ export default defineConfig({
       // Required for SharedArrayBuffer and WebGPU
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',
+      // Content Security Policy for XSS protection
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://huggingface.co blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';",
     },
   },
   plugins: [

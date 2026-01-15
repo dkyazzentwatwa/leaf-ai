@@ -343,6 +343,116 @@ export function About() {
           </div>
         </CollapsibleSection>
 
+        {/* Security Features */}
+        <CollapsibleSection
+          title={lang === 'es' ? 'Características de Seguridad' : 'Security Features'}
+          icon={<Shield className="h-5 w-5 text-primary" />}
+        >
+          <div className="space-y-3">
+            <p>
+              {lang === 'es'
+                ? 'Leaf AI implementa múltiples capas de seguridad para proteger tus datos y privacidad:'
+                : 'Leaf AI implements multiple layers of security to protect your data and privacy:'}
+            </p>
+            <ul className="space-y-2 ml-6 list-none">
+              <li className="flex items-start gap-2">
+                <span className="text-green-500 mt-1">✓</span>
+                <div>
+                  <strong className="text-foreground">
+                    {lang === 'es' ? 'Sanitización de Contenido' : 'Content Sanitization'}
+                  </strong>
+                  <p className="text-xs mt-0.5">
+                    {lang === 'es'
+                      ? 'Todas las salidas de IA son sanitizadas para prevenir ataques XSS usando APIs nativas del navegador (DOMParser, TreeWalker).'
+                      : 'All AI outputs are sanitized to prevent XSS attacks using native browser security APIs (DOMParser, TreeWalker).'}
+                  </p>
+                </div>
+              </li>
+
+              <li className="flex items-start gap-2">
+                <span className="text-green-500 mt-1">✓</span>
+                <div>
+                  <strong className="text-foreground">
+                    {lang === 'es' ? 'Encriptación End-to-End (Opcional)' : 'End-to-End Encryption (Optional)'}
+                  </strong>
+                  <p className="text-xs mt-0.5">
+                    {lang === 'es'
+                      ? 'Encriptación AES-256-GCM para todas las conversaciones en reposo. Tu contraseña nunca sale de tu dispositivo. Habilita en Configuración.'
+                      : 'AES-256-GCM encryption for all conversations at rest. Your password never leaves your device. Enable in Settings.'}
+                  </p>
+                </div>
+              </li>
+
+              <li className="flex items-start gap-2">
+                <span className="text-green-500 mt-1">✓</span>
+                <div>
+                  <strong className="text-foreground">
+                    {lang === 'es' ? 'Política de Seguridad de Contenido' : 'Content Security Policy'}
+                  </strong>
+                  <p className="text-xs mt-0.5">
+                    {lang === 'es'
+                      ? 'Headers CSP estrictos previenen inyección de scripts y carga de recursos no autorizados.'
+                      : 'Strict CSP headers prevent script injection and unauthorized resource loading.'}
+                  </p>
+                </div>
+              </li>
+
+              <li className="flex items-start gap-2">
+                <span className="text-green-500 mt-1">✓</span>
+                <div>
+                  <strong className="text-foreground">
+                    {lang === 'es' ? 'Validación Segura de Archivos' : 'Secure File Validation'}
+                  </strong>
+                  <p className="text-xs mt-0.5">
+                    {lang === 'es'
+                      ? 'Los archivos subidos son validados por tamaño, tipo y contenido antes de procesarlos. Límite de 5MB.'
+                      : 'File uploads are validated for size, type, and content before processing. 5MB limit.'}
+                  </p>
+                </div>
+              </li>
+
+              <li className="flex items-start gap-2">
+                <span className="text-green-500 mt-1">✓</span>
+                <div>
+                  <strong className="text-foreground">
+                    {lang === 'es' ? 'Borrado Seguro' : 'Secure Deletion'}
+                  </strong>
+                  <p className="text-xs mt-0.5">
+                    {lang === 'es'
+                      ? 'Las conversaciones eliminadas son borradas criptográficamente del almacenamiento del navegador.'
+                      : 'Deleted conversations are cryptographically erased from browser storage.'}
+                  </p>
+                </div>
+              </li>
+
+              <li className="flex items-start gap-2">
+                <span className="text-green-500 mt-1">✓</span>
+                <div>
+                  <strong className="text-foreground">
+                    {lang === 'es' ? 'Aislamiento de Workers' : 'Worker Isolation'}
+                  </strong>
+                  <p className="text-xs mt-0.5">
+                    {lang === 'es'
+                      ? 'El procesamiento de IA corre en Web Workers aislados con validación de mensajes.'
+                      : 'AI processing runs in isolated Web Workers with message validation.'}
+                  </p>
+                </div>
+              </li>
+            </ul>
+
+            <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-border">
+              <p className="text-xs">
+                <strong>
+                  {lang === 'es' ? 'Detalles Técnicos:' : 'Technical Details:'}
+                </strong>{' '}
+                {lang === 'es'
+                  ? 'Leaf AI usa la API nativa Web Crypto para encriptación, DOMParser para sanitización de contenido, y sigue las mejores prácticas de seguridad de OWASP. Todas las características de seguridad están implementadas sin dependencias externas para mantener nuestra filosofía local-first.'
+                  : 'Leaf AI uses native Web Crypto API for encryption, DOMParser for content sanitization, and follows OWASP security best practices. All security features are implemented without external dependencies to maintain our local-first philosophy.'}
+              </p>
+            </div>
+          </div>
+        </CollapsibleSection>
+
         {/* Requirements */}
         <CollapsibleSection
           title={lang === 'es' ? 'Requisitos del Sistema' : 'System Requirements'}

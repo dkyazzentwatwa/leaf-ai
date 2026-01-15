@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Folder, MessageCircle, Pencil, Tag, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { useAIStore } from '../stores/aiStore'
 import { cn } from '@/utils/cn'
+import { safePrompt } from '@/utils/userInput'
 
 export function ConversationHistory() {
   const { i18n } = useTranslation()
@@ -63,7 +64,7 @@ export function ConversationHistory() {
       ? 'Nombre de la conversación'
       : 'Conversation name'
     const placeholder = currentTitle || ''
-    const nextTitle = window.prompt(promptText, placeholder)
+    const nextTitle = safePrompt(promptText, placeholder, { maxLength: 100 })
 
     if (nextTitle && nextTitle.trim()) {
       renameConversation(conversationId, nextTitle.trim())
@@ -74,7 +75,7 @@ export function ConversationHistory() {
     const promptText = lang === 'es'
       ? 'Carpeta (vacío para quitar)'
       : 'Folder (leave blank to clear)'
-    const nextFolder = window.prompt(promptText, currentFolder || '')
+    const nextFolder = safePrompt(promptText, currentFolder || '', { maxLength: 50, allowEmpty: true })
 
     if (nextFolder === null) return
     setConversationFolder(conversationId, nextFolder.trim() || null)
@@ -84,7 +85,7 @@ export function ConversationHistory() {
     const promptText = lang === 'es'
       ? 'Etiquetas separadas por comas'
       : 'Comma-separated tags'
-    const nextTags = window.prompt(promptText, (currentTags || []).join(', '))
+    const nextTags = safePrompt(promptText, (currentTags || []).join(', '), { maxLength: 200, allowEmpty: true })
 
     if (nextTags === null) return
 
@@ -92,6 +93,7 @@ export function ConversationHistory() {
       .split(',')
       .map((tag) => tag.trim())
       .filter(Boolean)
+      .slice(0, 10) // Limit to 10 tags
 
     setConversationTags(conversationId, Array.from(new Set(tags)))
   }

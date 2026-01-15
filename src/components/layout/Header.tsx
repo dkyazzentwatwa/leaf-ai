@@ -4,6 +4,7 @@ import { Leaf, Settings, Info, MessageCircle } from 'lucide-react'
 import { LanguageSwitcher } from '@/features/common/LanguageSwitcher'
 import { ThemeToggle } from '@/features/common/ThemeToggle'
 import { ModelStatusBadge } from '@/features/ai/components/ModelStatusBadge'
+import { SecurityBadge } from '@/components/security/SecurityBadge'
 import { cn } from '@/utils/cn'
 
 export function Header() {
@@ -48,6 +49,7 @@ export function Header() {
             ))}
             <div className="ml-4 flex items-center gap-3 pl-4 border-l border-border/40">
               <ModelStatusBadge />
+              <SecurityBadge />
               <ThemeToggle />
               <LanguageSwitcher />
             </div>

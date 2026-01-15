@@ -8,6 +8,7 @@
 import * as webllm from '@mlc-ai/web-llm'
 import type { WorkerRequest, WorkerResponse } from './types'
 import type { ModelId, ChatMessage } from '../services/webllm/engine'
+import { validateWorkerRequest } from './validation'
 
 // Worker state
 let engine: webllm.MLCEngineInterface | null = null
@@ -225,6 +226,12 @@ async function getStats() {
 // Message handler
 self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   const { data } = event
+
+  // Validate incoming request
+  if (!validateWorkerRequest(data)) {
+    console.error('Invalid worker request:', data)
+    return
+  }
 
   switch (data.type) {
     case 'check-support': {

@@ -8,6 +8,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { ModelId, ModelLoadProgress, ChatMessage } from '../services/webllm/engine'
 import type { AssistantType } from '../services/webllm/prompts'
+import { secureDeleteConversation } from '@/utils/secureDelete'
 
 export interface StoredMessage extends ChatMessage {
   id: string
@@ -51,6 +52,10 @@ interface AIState {
   promptTemplates: PromptTemplate[]
   lastModelLoadMs: number | null
 
+  // Encryption state
+  encryptionEnabled: boolean
+  isUnlocked: boolean
+
   // Actions
   setModelStatus: (status: AIState['modelStatus']) => void
   setModelProgress: (progress: ModelLoadProgress | null) => void
@@ -89,6 +94,11 @@ interface AIState {
   deletePromptTemplate: (templateId: string) => void
   setLastModelLoadMs: (duration: number | null) => void
 
+  // Encryption actions
+  setEncryptionEnabled: (enabled: boolean) => void
+  setIsUnlocked: (unlocked: boolean) => void
+  lockApp: () => void
+
   reset: () => void
 }
 
@@ -106,6 +116,8 @@ const initialState = {
   privacyMode: false,
   promptTemplates: [],
   lastModelLoadMs: null,
+  encryptionEnabled: false,
+  isUnlocked: true,
 }
 
 export const useAIStore = create<AIState>()(
@@ -324,6 +336,11 @@ export const useAIStore = create<AIState>()(
             activeConversationId: nextActive,
           }
         })
+
+        // Securely delete conversation from IndexedDB
+        secureDeleteConversation(id).catch((error) => {
+          console.error('Failed to securely delete conversation:', error)
+        })
       },
 
       clearAllConversations: () => {
@@ -347,6 +364,11 @@ export const useAIStore = create<AIState>()(
       })),
       setLastModelLoadMs: (duration) => set({ lastModelLoadMs: duration }),
 
+      // Encryption actions
+      setEncryptionEnabled: (enabled) => set({ encryptionEnabled: enabled }),
+      setIsUnlocked: (unlocked) => set({ isUnlocked: unlocked }),
+      lockApp: () => set({ isUnlocked: false }),
+
       // Reset
       reset: () => set(initialState),
     }),
@@ -359,6 +381,8 @@ export const useAIStore = create<AIState>()(
         autoLoadModel: state.autoLoadModel,
         privacyMode: state.privacyMode,
         promptTemplates: state.promptTemplates,
+        encryptionEnabled: state.encryptionEnabled,
+        // Note: isUnlocked is NOT persisted - app starts locked if encryption enabled
       }),
     }
   )

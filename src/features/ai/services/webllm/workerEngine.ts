@@ -8,6 +8,7 @@
 import type { WorkerRequest, WorkerResponse } from '../../workers/types'
 import type { ModelId, ModelLoadProgress, ChatMessage, GenerateOptions } from './engine'
 import { AVAILABLE_MODELS } from './engine'
+import { validateWorkerRequest, validateWorkerResponse } from '../../workers/validation'
 
 type MessageHandler = (response: WorkerResponse) => void
 
@@ -116,6 +117,12 @@ class WorkerEngine {
     if (!this.worker) {
       throw new Error('Worker not initialized. Call init() first.')
     }
+
+    // Validate message before sending
+    if (!validateWorkerRequest(message)) {
+      throw new Error('Invalid worker message structure')
+    }
+
     this.worker.postMessage(message)
   }
 
@@ -123,6 +130,12 @@ class WorkerEngine {
    * Handle incoming messages from worker
    */
   private handleMessage(response: WorkerResponse) {
+    // Validate response from worker
+    if (!validateWorkerResponse(response)) {
+      console.error('Invalid worker response:', response)
+      return
+    }
+
     const handlers = this.messageHandlers.get(response.type)
     if (handlers) {
       handlers.forEach((handler) => handler(response))

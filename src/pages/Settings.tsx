@@ -12,12 +12,15 @@ import {
   Plus,
   Pencil,
   X,
+  AlertTriangle,
 } from 'lucide-react'
 import { ModelManager } from '@/features/ai/components/ModelManager'
 import { ModelDownloader } from '@/features/ai/components/ModelDownloader'
 import { useWebLLM } from '@/features/ai/hooks/useWebLLM'
 import { useAIStore, selectIsModelReady, selectModelStatus } from '@/features/ai/stores/aiStore'
 import { useToastStore } from '@/stores/toastStore'
+import { safePrompt, safeConfirm } from '@/utils/userInput'
+import { secureWipeAllData } from '@/utils/secureDelete'
 
 const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 
@@ -95,10 +98,12 @@ export function Settings() {
   }
 
   const handleAddTemplate = () => {
-    const title = window.prompt(lang === 'es' ? 'Título de la plantilla' : 'Template title')
+    const title = safePrompt(lang === 'es' ? 'Título de la plantilla' : 'Template title', '', { maxLength: 100 })
     if (!title || !title.trim()) return
-    const content = window.prompt(
-      lang === 'es' ? 'Contenido de la plantilla' : 'Template content'
+    const content = safePrompt(
+      lang === 'es' ? 'Contenido de la plantilla' : 'Template content',
+      '',
+      { maxLength: 1000 }
     )
     if (!content || !content.trim()) return
 
@@ -111,9 +116,9 @@ export function Settings() {
   }
 
   const handleEditTemplate = (templateId: string, currentTitle: string, currentContent: string) => {
-    const title = window.prompt(lang === 'es' ? 'Editar título' : 'Edit title', currentTitle)
+    const title = safePrompt(lang === 'es' ? 'Editar título' : 'Edit title', currentTitle, { maxLength: 100 })
     if (title === null) return
-    const content = window.prompt(lang === 'es' ? 'Editar contenido' : 'Edit content', currentContent)
+    const content = safePrompt(lang === 'es' ? 'Editar contenido' : 'Edit content', currentContent, { maxLength: 1000 })
     if (content === null) return
 
     updatePromptTemplate(templateId, {
@@ -128,9 +133,33 @@ export function Settings() {
       ? '¿Eliminar esta plantilla?'
       : 'Delete this template?'
 
-    if (!window.confirm(confirmMessage)) return
+    if (!safeConfirm(confirmMessage)) return
     deletePromptTemplate(templateId)
     addToast(lang === 'es' ? 'Plantilla eliminada' : 'Template deleted', 'success')
+  }
+
+  const handleSecureWipe = async () => {
+    const confirmMessage = lang === 'es'
+      ? '⚠️ ADVERTENCIA: Esto borrará TODOS los datos de la aplicación de forma permanente (conversaciones, ajustes, modelos descargados). Esta acción no se puede deshacer.\n\n¿Estás seguro?'
+      : '⚠️ WARNING: This will permanently erase ALL application data (conversations, settings, downloaded models). This action cannot be undone.\n\nAre you sure?'
+
+    if (!safeConfirm(confirmMessage)) return
+
+    try {
+      await secureWipeAllData()
+      addToast(
+        lang === 'es' ? 'Datos borrados de forma segura' : 'Data securely wiped',
+        'success'
+      )
+      // Reload page to reset application state
+      setTimeout(() => window.location.reload(), 1000)
+    } catch (error) {
+      console.error('Failed to wipe data:', error)
+      addToast(
+        lang === 'es' ? 'Error al borrar datos' : 'Failed to wipe data',
+        'error'
+      )
+    }
   }
 
   const handleRefreshStats = async () => {
@@ -332,6 +361,14 @@ export function Settings() {
                 <Upload className="h-4 w-4" />
                 {lang === 'es' ? 'Importar' : 'Import'}
               </button>
+              <button
+                type="button"
+                onClick={handleSecureWipe}
+                className="inline-flex items-center gap-2 rounded-md border border-destructive px-3 py-1.5 text-sm text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              >
+                <AlertTriangle className="h-4 w-4" />
+                {lang === 'es' ? 'Borrado Seguro' : 'Secure Wipe'}
+              </button>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -340,6 +377,11 @@ export function Settings() {
                 onChange={handleImportData}
               />
             </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {lang === 'es'
+                ? '⚠️ El borrado seguro elimina TODOS los datos de forma permanente, incluyendo modelos descargados.'
+                : '⚠️ Secure wipe permanently erases ALL data including downloaded models.'}
+            </p>
           </div>
         </div>
       </section>

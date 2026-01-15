@@ -18,8 +18,6 @@ import {
   Send,
   Shield,
   Square,
-  ThumbsDown,
-  ThumbsUp,
   Trash2,
   Loader2,
   User,
@@ -30,6 +28,9 @@ import {
   Settings,
   Activity,
 } from 'lucide-react'
+import { isUrlSafe } from '@/utils/sanitize'
+import { validateFile, validateContentSize } from '@/utils/fileValidation'
+import { safePrompt } from '@/utils/userInput'
 import { useWebLLM } from '../hooks/useWebLLM'
 import { useAIStore, selectActiveConversation } from '../stores/aiStore'
 import { AVAILABLE_MODELS } from '../services/webllm/engine'
@@ -82,7 +83,6 @@ export function ChatInterface({
   const renameConversation = useAIStore((s) => s.renameConversation)
   const deleteMessage = useAIStore((s) => s.deleteMessage)
   const toggleBookmark = useAIStore((s) => s.toggleBookmark)
-  const setReaction = useAIStore((s) => s.setReaction)
   const setConversationModel = useAIStore((s) => s.setConversationModel)
   const privacyMode = useAIStore((s) => s.privacyMode)
   const setPrivacyMode = useAIStore((s) => s.setPrivacyMode)
@@ -161,20 +161,37 @@ export function ChatInterface({
     const file = event.target.files?.[0]
     if (!file) return
 
-    const MAX_FILE_CHARS = 12000
-    const text = await file.text()
-    const truncated = text.length > MAX_FILE_CHARS
-    const clippedText = truncated ? text.slice(0, MAX_FILE_CHARS) : text
-
-    const prompt = lang === 'es'
-      ? `Analiza el siguiente archivo (${file.name}). Resume puntos clave, riesgos y próximos pasos:\n\n${clippedText}${truncated ? '\n\n[Contenido truncado]' : ''}`
-      : `Analyze the following file (${file.name}). Summarize key points, risks, and next steps:\n\n${clippedText}${truncated ? '\n\n[Content truncated]' : ''}`
-
-    setEditingMessageIndex(null)
-    setInput('')
+    // Reset input value immediately
     event.target.value = ''
 
+    // Validate file before processing
+    const validation = await validateFile(file)
+    if (!validation.valid) {
+      addToast(validation.error || (lang === 'es' ? 'Archivo no válido' : 'Invalid file'), 'error')
+      return
+    }
+
     try {
+      const text = await file.text()
+
+      // Validate content size
+      const sizeValidation = validateContentSize(text)
+      if (!sizeValidation.valid) {
+        addToast(sizeValidation.error || (lang === 'es' ? 'Contenido muy grande' : 'Content too large'), 'error')
+        return
+      }
+
+      const MAX_FILE_CHARS = 12000
+      const truncated = text.length > MAX_FILE_CHARS
+      const clippedText = truncated ? text.slice(0, MAX_FILE_CHARS) : text
+
+      const prompt = lang === 'es'
+        ? `Analiza el siguiente archivo (${file.name}). Resume puntos clave, riesgos y próximos pasos:\n\n${clippedText}${truncated ? '\n\n[Contenido truncado]' : ''}`
+        : `Analyze the following file (${file.name}). Summarize key points, risks, and next steps:\n\n${clippedText}${truncated ? '\n\n[Content truncated]' : ''}`
+
+      setEditingMessageIndex(null)
+      setInput('')
+
       await sendMessage(prompt)
       addToast(
         truncated
@@ -184,6 +201,10 @@ export function ChatInterface({
       )
     } catch (error) {
       console.error('Failed to analyze file:', error)
+      addToast(
+        lang === 'es' ? 'Error al leer archivo' : 'Failed to read file',
+        'error'
+      )
     }
   }
 
@@ -279,7 +300,7 @@ export function ChatInterface({
     const promptText = lang === 'es'
       ? 'Nombre para esta conversación (opcional)'
       : 'Name this conversation (optional)'
-    const nextTitle = window.prompt(promptText, '')
+    const nextTitle = safePrompt(promptText, '', { maxLength: 100 })
     if (nextTitle && nextTitle.trim()) {
       renameConversation(conversationId, nextTitle.trim())
     }
@@ -290,7 +311,7 @@ export function ChatInterface({
     const promptText = lang === 'es'
       ? 'Renombrar conversación'
       : 'Rename conversation'
-    const nextTitle = window.prompt(promptText, activeConversation.title || '')
+    const nextTitle = safePrompt(promptText, activeConversation.title || '', { maxLength: 100 })
     if (nextTitle && nextTitle.trim()) {
       renameConversation(activeConversation.id, nextTitle.trim())
     }
@@ -351,11 +372,6 @@ export function ChatInterface({
   const handleBookmark = (messageIndex: number) => {
     if (!activeConversation) return
     toggleBookmark(activeConversation.id, messageIndex)
-  }
-
-  const handleReaction = (messageIndex: number, reaction: 'up' | 'down') => {
-    if (!activeConversation) return
-    setReaction(activeConversation.id, messageIndex, reaction)
   }
 
   const handleExport = (format: 'markdown' | 'json') => {
@@ -456,18 +472,25 @@ export function ChatInterface({
 
       if (earliestMatch.type === 'link') {
         const href = earliestMatch.match[2]
-        const isExternal = /^https?:\/\//.test(href) || href.startsWith('mailto:')
-        nodes.push(
-          <a
-            key={`${keyPrefix}-link-${tokenIndex}`}
-            href={href}
-            className="underline underline-offset-2 text-primary"
-            target={isExternal ? '_blank' : undefined}
-            rel={isExternal ? 'noreferrer' : undefined}
-          >
-            {parseDecorations(content, `${keyPrefix}-linktext-${tokenIndex}`)}
-          </a>
-        )
+
+        // Validate URL for security
+        if (isUrlSafe(href)) {
+          const isExternal = /^https?:\/\//.test(href) || href.startsWith('mailto:')
+          nodes.push(
+            <a
+              key={`${keyPrefix}-link-${tokenIndex}`}
+              href={href}
+              className="underline underline-offset-2 text-primary"
+              target={isExternal ? '_blank' : undefined}
+              rel={isExternal ? 'noreferrer' : undefined}
+            >
+              {parseDecorations(content, `${keyPrefix}-linktext-${tokenIndex}`)}
+            </a>
+          )
+        } else {
+          // Render as plain text if URL is unsafe
+          nodes.push(<span key={`${keyPrefix}-link-${tokenIndex}`}>{matchText}</span>)
+        }
       } else if (earliestMatch.type === 'bold') {
         nodes.push(
           <strong key={`${keyPrefix}-bold-${tokenIndex}`}>
@@ -1004,34 +1027,6 @@ export function ChatInterface({
                       <Bookmark className="h-3 w-3" />
                       <span className="hidden md:inline">{lang === 'es' ? 'Guardar' : 'Save'}</span>
                     </button>
-                    {!isUser && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => handleReaction(index, 'up')}
-                          className={cn(
-                            'inline-flex items-center gap-0.5 sm:gap-1 hover:text-foreground',
-                            message.reaction === 'up' && 'text-primary'
-                          )}
-                          title={lang === 'es' ? 'Me gusta' : 'Like'}
-                        >
-                          <ThumbsUp className="h-3 w-3" />
-                          <span className="hidden md:inline">{lang === 'es' ? 'Útil' : 'Helpful'}</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleReaction(index, 'down')}
-                          className={cn(
-                            'inline-flex items-center gap-0.5 sm:gap-1 hover:text-foreground',
-                            message.reaction === 'down' && 'text-primary'
-                          )}
-                          title={lang === 'es' ? 'No útil' : 'Not helpful'}
-                        >
-                          <ThumbsDown className="h-3 w-3" />
-                          <span className="hidden md:inline">{lang === 'es' ? 'No útil' : 'Not helpful'}</span>
-                        </button>
-                      </>
-                    )}
                     <button
                       type="button"
                       onClick={() => handleDeleteMessage(index, message.role === 'user' ? 'user' : 'assistant')}
@@ -1091,10 +1086,10 @@ export function ChatInterface({
           <button
             type="button"
             onClick={scrollToLatest}
-            className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 flex items-center gap-1 sm:gap-2 rounded-full border border-border bg-background/90 px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs text-muted-foreground shadow-sm hover:text-foreground"
+            className="sticky bottom-3 sm:bottom-4 left-full ml-auto mr-3 sm:mr-4 mt-auto z-10 flex items-center gap-1 sm:gap-2 rounded-full border border-border bg-background/95 backdrop-blur-sm px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-muted-foreground shadow-lg hover:text-foreground hover:bg-background hover:shadow-xl transition-all"
           >
-            <ArrowDown className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-            <span className="hidden sm:inline">{lang === 'es' ? 'Ir al final' : 'Jump to latest'}</span>
+            <ArrowDown className="h-4 w-4" />
+            <span>{lang === 'es' ? 'Ir al final' : 'Jump to latest'}</span>
           </button>
         )}
       </div>
