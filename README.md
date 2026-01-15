@@ -62,7 +62,7 @@ npm run test         # Run tests with Vitest
 - ✅ Safari 26+ / iOS 26+ (WebGPU support)
 - ⚠️ iOS <26: WebGPU not available
 
-**Note**: iOS has strict memory constraints (~1.5GB WebContent limit). Leaf AI automatically detects iOS and offers only compatible ultra-small models (<400MB).
+**Note**: iOS has strict memory constraints (~1.5GB WebContent limit). Leaf AI automatically detects iOS and offers only compatible ultra-small models (<1GB).
 
 ## 🧠 Available AI Models
 

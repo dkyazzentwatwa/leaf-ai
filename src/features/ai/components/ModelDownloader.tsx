@@ -176,9 +176,9 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
   // Loading state for engine detection
   if (!engineInfo) {
     return (
-      <div className={cn('border border-border rounded-lg p-3 sm:p-4', compact && 'p-2 sm:p-3')}>
+      <div className={cn('border border-border rounded-lg p-3 sm:p-4 w-full', compact && 'p-2 sm:p-3')}>
         <div className="flex items-center gap-2 sm:gap-3">
-          <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin text-muted-foreground" />
+          <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin text-muted-foreground flex-shrink-0" />
           <span className="text-sm sm:text-base text-muted-foreground">Checking AI compatibility...</span>
         </div>
       </div>
@@ -200,20 +200,20 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
     }
 
     return (
-      <div className="border border-green-500/30 bg-green-500/10 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="h-6 w-6 text-green-500" />
-            <div>
+      <div className="border border-green-500/30 bg-green-500/10 rounded-lg p-4 w-full">
+        <div className="flex items-center justify-between gap-3 min-w-0">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <CheckCircle2 className="h-6 w-6 text-green-500 flex-shrink-0" />
+            <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-green-700 dark:text-green-400">AI Model Ready</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground truncate">
                 {modelInfo?.name} loaded and ready to use
               </p>
             </div>
           </div>
           <button
             onClick={handleUnload}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-destructive border border-border rounded-md hover:border-destructive/50 transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-destructive border border-border rounded-md hover:border-destructive/50 transition-colors flex-shrink-0"
           >
             <Trash2 className="h-4 w-4" />
             Unload
@@ -226,19 +226,19 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
   // Model is loading
   if (isModelLoading && modelProgress) {
     return (
-      <div className={cn('border border-border rounded-lg p-4', compact && 'p-3')}>
+      <div className={cn('border border-border rounded-lg p-4 w-full', compact && 'p-3')}>
         <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <div className="flex-1">
-              <h3 className="font-semibold">
+          <div className="flex items-center gap-3 min-w-0">
+            <Loader2 className="h-5 w-5 animate-spin text-primary flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-sm sm:text-base">
                 {modelProgress.stage === 'downloading' ? 'Downloading AI Model...' : 'Loading AI Model...'}
               </h3>
-              <p className="text-sm text-muted-foreground truncate">
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">
                 {modelProgress.text}
               </p>
             </div>
-            <span className="text-sm font-medium">{modelProgress.progress}%</span>
+            <span className="text-sm font-medium flex-shrink-0">{modelProgress.progress}%</span>
           </div>
 
           {/* Progress bar */}
@@ -263,12 +263,12 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
   // Error state
   if (modelError) {
     return (
-      <div className={cn('border border-destructive/50 bg-destructive/10 rounded-lg p-4', compact && 'p-3')}>
-        <div className="flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
-          <div className="flex-1">
+      <div className={cn('border border-destructive/50 bg-destructive/10 rounded-lg p-4 w-full', compact && 'p-3')}>
+        <div className="flex items-start gap-3 min-w-0">
+          <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-destructive">Failed to Load AI</h3>
-            <p className="text-sm text-muted-foreground mt-1">{modelError}</p>
+            <p className="text-sm text-muted-foreground mt-1 break-words">{modelError}</p>
             <button
               onClick={handleDownload}
               className="mt-3 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm"
@@ -298,14 +298,14 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
   }
 
   return (
-    <div className="border border-border rounded-lg p-6 space-y-4">
-      <div className="flex items-start gap-4">
-        <div className="p-3 bg-primary/10 rounded-lg">
+    <div className="border border-border rounded-lg p-4 sm:p-6 space-y-4 w-full">
+      <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+        <div className="p-3 bg-primary/10 rounded-lg flex-shrink-0">
           <Cpu className="h-6 w-6 text-primary" />
         </div>
-        <div className="flex-1">
-          <h3 className="font-semibold text-lg">Local AI Assistant</h3>
-          <p className="text-sm text-muted-foreground mt-1">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-base sm:text-lg">Local AI Assistant</h3>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">
             Download an AI model to enable the rights assistant, document generator, and smart
             features. All processing happens locally on your device - your data never leaves
             your phone.
@@ -315,13 +315,13 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
 
       {/* iOS WebGPU Support Banner */}
       {isIOS && engineInfo?.supported && (
-        <div className="flex items-start gap-2 px-3 py-2 bg-green-500/10 border border-green-500/30 rounded-md">
-          <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
-          <div className="flex-1">
+        <div className="flex items-start gap-2 px-3 py-2 bg-green-500/10 border border-green-500/30 rounded-md min-w-0">
+          <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
             <p className="text-xs sm:text-sm text-green-700 dark:text-green-300 font-medium">
               iPhone/iPad Detected - WebGPU Active!
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5 break-words">
               Your device supports hardware-accelerated AI. Using optimized iOS models (&lt; 400MB) for best performance.
             </p>
           </div>
@@ -337,7 +337,7 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
               <label
                 key={id}
                 className={cn(
-                  'flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors',
+                  'flex items-center gap-2 sm:gap-3 p-2 sm:p-3 border rounded-lg cursor-pointer transition-colors min-w-0',
                   selectedModel === id
                     ? 'border-primary bg-primary/5'
                     : 'border-border hover:border-primary/50'
@@ -353,7 +353,7 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
                 />
                 <div
                   className={cn(
-                    'h-4 w-4 rounded-full border-2 flex items-center justify-center',
+                    'h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0',
                     selectedModel === id ? 'border-primary' : 'border-muted-foreground'
                   )}
                 >
@@ -361,25 +361,25 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
                     <div className="h-2 w-2 rounded-full bg-primary" />
                   )}
                 </div>
-                <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{info.name}</span>
+                <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                  <span className="font-medium text-sm sm:text-base">{info.name}</span>
                   {info.recommended && (
-                    <span className="text-xs bg-green-500/10 text-green-600 px-2 py-0.5 rounded">
+                    <span className="text-xs bg-green-500/10 text-green-600 px-2 py-0.5 rounded whitespace-nowrap">
                       Recommended
                     </span>
                   )}
                   {cachedModels.has(id) && (
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded whitespace-nowrap">
                       Cached
                     </span>
                   )}
                 </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs sm:text-sm text-muted-foreground break-words">
                     {info.description}
                   </p>
                 </div>
-                <span className="text-sm text-muted-foreground">{info.size}</span>
+                <span className="text-xs sm:text-sm text-muted-foreground flex-shrink-0">{info.size}</span>
               </label>
             )
           )}
@@ -396,9 +396,9 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
       </button>
 
       {/* Privacy notice */}
-      <div className="flex items-start gap-2 text-xs text-muted-foreground">
+      <div className="flex items-start gap-2 text-xs text-muted-foreground min-w-0">
         <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-        <p>
+        <p className="flex-1 min-w-0 break-words">
           {isSelectedCached
             ? 'This model is already cached, so loading will be fast.'
             : 'The AI model is downloaded once and cached in your browser.'} All conversations are
