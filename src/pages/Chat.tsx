@@ -12,7 +12,7 @@ export function Chat() {
   const isModelReady = useAIStore(selectIsModelReady)
 
   return (
-    <div className="max-w-6xl mx-auto px-3 sm:px-6">
+    <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
       {/* Header */}
       <div className="mb-3 sm:mb-5 text-center">
         <div className="flex items-center justify-center gap-2 mb-1.5 sm:mb-2">
@@ -49,9 +49,9 @@ export function Chat() {
         )}
       </div>
 
-      <div className="mt-3 sm:mt-6 grid gap-3 sm:gap-4 lg:grid-cols-[280px,1fr]">
+      <div className="mt-3 sm:mt-6 grid gap-3 sm:gap-4 lg:grid-cols-[320px,1fr]">
         <ConversationHistory />
-        <div className="space-y-3 sm:space-y-5">
+        <div className="space-y-3 sm:space-y-5 min-w-0">
           {/* Model downloader (if not ready) */}
           {!isModelReady && (
             <div>

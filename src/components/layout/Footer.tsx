@@ -47,6 +47,17 @@ export function Footer() {
             {lang === 'es' ? 'para un mundo más privado' : 'for a more private world'}
           </p>
           <p className="mt-1">
+            {lang === 'es' ? 'Hecho por' : 'Made by'}{' '}
+            <a
+              href="https://flow-club.techtiff.ai/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors underline"
+            >
+              the AI Flow Club
+            </a>
+          </p>
+          <p className="mt-1">
             © {currentYear} Leaf AI · v{APP_CONFIG.version}
           </p>
         </div>
