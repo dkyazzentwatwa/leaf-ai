@@ -132,6 +132,13 @@ class UnifiedEngine {
     const { AVAILABLE_MODELS } = await import('./webllm/engine')
     return AVAILABLE_MODELS
   }
+
+  /**
+   * Get runtime stats (tokens/sec, etc.)
+   */
+  async getStats(): Promise<{ tokensPerSecond: number } | null> {
+    return workerEngine.getStats()
+  }
 }
 
 export const unifiedEngine = new UnifiedEngine()

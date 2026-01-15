@@ -27,6 +27,8 @@ import {
   Sparkles,
   RotateCcw,
   AlertCircle,
+  Settings,
+  Activity,
 } from 'lucide-react'
 import { useWebLLM } from '../hooks/useWebLLM'
 import { useAIStore, selectActiveConversation } from '../stores/aiStore'
@@ -55,6 +57,8 @@ export function ChatInterface({
   const [input, setInput] = useState('')
   const [editingMessageIndex, setEditingMessageIndex] = useState<number | null>(null)
   const [showScrollToLatest, setShowScrollToLatest] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [performanceStats, setPerformanceStats] = useState<{ tokensPerSecond: number } | null>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -68,6 +72,7 @@ export function ChatInterface({
     generateReply,
     stopGeneration,
     resetChat,
+    getStats,
   } = useWebLLM({ assistantType, context })
 
   const activeConversation = useAIStore(selectActiveConversation)
@@ -193,6 +198,20 @@ export function ChatInterface({
     const atBottom = checkIsAtBottom()
     setShowScrollToLatest(!atBottom)
   }, [messages, isGenerating])
+
+  // Monitor performance stats
+  useEffect(() => {
+    if (!isModelReady || !isGenerating) {
+      return
+    }
+
+    const interval = setInterval(async () => {
+      const stats = await getStats()
+      setPerformanceStats(stats)
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [isModelReady, isGenerating, getStats])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -795,8 +814,90 @@ export function ChatInterface({
             <RotateCcw className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
             <span className="hidden sm:inline">{lang === 'es' ? 'Nueva' : 'New'}</span>
           </button>
+          <button
+            type="button"
+            onClick={() => setShowSettings(!showSettings)}
+            className={cn(
+              'flex items-center gap-1 sm:gap-2 px-2 sm:px-2.5 py-1.5 text-xs text-muted-foreground border border-border rounded-md hover:bg-muted transition-colors',
+              showSettings && 'text-primary border-primary/40 bg-primary/10'
+            )}
+            title={lang === 'es' ? 'Configuración' : 'Settings'}
+          >
+            <Settings className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{lang === 'es' ? 'Configuración' : 'Settings'}</span>
+          </button>
         </div>
       </div>
+
+      {/* Settings Panel */}
+      {showSettings && (
+        <div className="border-b border-border bg-muted/20 px-2 sm:px-4 py-2 sm:py-3 space-y-2 sm:space-y-3">
+          {/* Performance Stats */}
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <Activity className="h-3.5 w-3.5" />
+              <span>{lang === 'es' ? 'Rendimiento' : 'Performance'}</span>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2 text-xs">
+              <div className="flex justify-between items-center px-2 py-1.5 bg-background rounded border border-border">
+                <span className="text-muted-foreground">{lang === 'es' ? 'Modelo' : 'Model'}</span>
+                <span className="font-mono">{AVAILABLE_MODELS[activeModelId]?.name || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between items-center px-2 py-1.5 bg-background rounded border border-border">
+                <span className="text-muted-foreground">{lang === 'es' ? 'Tokens/seg' : 'Tokens/sec'}</span>
+                <span className="font-mono">
+                  {isGenerating && performanceStats
+                    ? `${performanceStats.tokensPerSecond.toFixed(1)}`
+                    : 'N/A'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center px-2 py-1.5 bg-background rounded border border-border">
+                <span className="text-muted-foreground">{lang === 'es' ? 'Estado' : 'Status'}</span>
+                <span className={cn(
+                  "font-mono",
+                  isGenerating ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'
+                )}>
+                  {isGenerating
+                    ? (lang === 'es' ? 'Generando' : 'Generating')
+                    : (lang === 'es' ? 'Inactivo' : 'Idle')}
+                </span>
+              </div>
+              <div className="flex justify-between items-center px-2 py-1.5 bg-background rounded border border-border">
+                <span className="text-muted-foreground">{lang === 'es' ? 'Mensajes' : 'Messages'}</span>
+                <span className="font-mono">{messages.length}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Privacy Settings */}
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <Shield className="h-3.5 w-3.5" />
+              <span>{lang === 'es' ? 'Privacidad' : 'Privacy'}</span>
+            </div>
+            <div className="flex items-center justify-between px-2 py-1.5 bg-background rounded border border-border">
+              <span className="text-xs text-muted-foreground">
+                {lang === 'es' ? 'Modo privacidad (ocultar contenido)' : 'Privacy mode (hide content)'}
+              </span>
+              <button
+                type="button"
+                onClick={handlePrivacyToggle}
+                className={cn(
+                  'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
+                  privacyMode ? 'bg-primary' : 'bg-muted-foreground/30'
+                )}
+              >
+                <span
+                  className={cn(
+                    'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
+                    privacyMode ? 'translate-x-5' : 'translate-x-0.5'
+                  )}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       <div

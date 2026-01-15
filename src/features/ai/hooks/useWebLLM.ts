@@ -313,8 +313,12 @@ export function useWebLLM(options: UseWebLLMOptions = {}) {
    * Get performance stats
    */
   const getStats = useCallback(async (): Promise<{ tokensPerSecond: number } | null> => {
-    // Stats not available for Transformers.js yet
-    return null
+    try {
+      return await unifiedEngine.getStats()
+    } catch (error) {
+      console.warn('Failed to get stats:', error)
+      return null
+    }
   }, [])
 
   return {
