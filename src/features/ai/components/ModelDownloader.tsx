@@ -298,49 +298,47 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
   }
 
   return (
-    <div className="border border-border rounded-lg p-4 sm:p-6 space-y-4 w-full">
-      <div className="flex items-start gap-3 sm:gap-4 min-w-0">
-        <div className="p-3 bg-primary/10 rounded-lg flex-shrink-0">
-          <Cpu className="h-6 w-6 text-primary" />
+    <div className="border border-border rounded-2xl p-6 sm:p-8 space-y-6 w-full bg-card shadow-sm">
+      <div className="flex items-start gap-4 sm:gap-5 min-w-0">
+        <div className="p-4 bg-primary/10 rounded-2xl flex-shrink-0">
+          <Cpu className="h-7 w-7 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-base sm:text-lg">Local AI Assistant</h3>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">
-            Download an AI model to enable the rights assistant, document generator, and smart
-            features. All processing happens locally on your device - your data never leaves
-            your phone.
+          <h2 className="font-bold text-xl sm:text-2xl tracking-tight mb-2">Get Started with Local AI</h2>
+          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed break-words">
+            Download an AI model to start chatting. All processing happens on your device—your conversations never leave your browser.
           </p>
         </div>
       </div>
 
       {/* iOS WebGPU Support Banner */}
       {isIOS && engineInfo?.supported && (
-        <div className="flex items-start gap-2 px-3 py-2 bg-green-500/10 border border-green-500/30 rounded-md min-w-0">
-          <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+        <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl min-w-0">
+          <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="text-xs sm:text-sm text-green-700 dark:text-green-300 font-medium">
+            <p className="text-sm font-semibold text-foreground mb-1">
               iPhone/iPad Detected - WebGPU Active!
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5 break-words">
-              Your device supports hardware-accelerated AI. Using optimized iOS models (&lt; 400MB) for best performance.
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed break-words">
+              Your device supports hardware-accelerated AI. Using optimized iOS models (&lt; 1GB) for best performance.
             </p>
           </div>
         </div>
       )}
 
       {/* Model selection */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Select Model</label>
-        <div className="space-y-2">
+      <div className="space-y-4">
+        <h3 className="text-base font-semibold">Select AI Model</h3>
+        <div className="space-y-3">
           {(Object.entries(availableModels) as [ModelId, any][]).map(
             ([id, info]) => (
               <label
                 key={id}
                 className={cn(
-                  'flex items-center gap-2 sm:gap-3 p-2 sm:p-3 border rounded-lg cursor-pointer transition-colors min-w-0',
+                  'flex items-center gap-3 sm:gap-4 p-4 border rounded-xl cursor-pointer transition-all duration-200 min-w-0',
                   selectedModel === id
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/50'
+                    ? 'border-primary bg-primary/5 shadow-sm'
+                    : 'border-border hover:border-primary/40 hover:shadow-sm'
                 )}
               >
                 <input
@@ -389,21 +387,20 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
       {/* Download button */}
       <button
         onClick={handleDownload}
-        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+        className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all duration-200 font-semibold text-base shadow-sm hover:shadow-md"
       >
         <Download className="h-5 w-5" />
         {actionLabel} {availableModels[selectedModel]?.name || 'Model'}
       </button>
 
       {/* Privacy notice */}
-      <div className="flex items-start gap-2 text-xs text-muted-foreground min-w-0">
-        <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-        <p className="flex-1 min-w-0 break-words">
+      <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 text-sm text-muted-foreground min-w-0 border border-border/40">
+        <Info className="h-5 w-5 mt-0.5 flex-shrink-0 text-accent" />
+        <p className="flex-1 min-w-0 break-words leading-relaxed">
           {isSelectedCached
-            ? 'This model is already cached, so loading will be fast.'
-            : 'The AI model is downloaded once and cached in your browser.'} All conversations are
-          processed locally - no data is ever sent to external servers. This protects your
-          privacy completely.
+            ? 'This model is already cached—loading will be instant. '
+            : 'The AI model downloads once and caches in your browser. '}
+          All conversations are processed locally. No data ever leaves your device.
         </p>
       </div>
     </div>

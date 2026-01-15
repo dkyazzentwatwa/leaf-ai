@@ -18,13 +18,13 @@ export function Header() {
   ]
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/20 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 transition-all duration-300">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex h-20 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-            <Leaf className="h-7 w-7 text-primary" />
-            <span className="font-bold text-xl bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent">
+          <Link to="/" className="flex items-center space-x-2.5 hover:opacity-80 transition-opacity group">
+            <Leaf className="h-8 w-8 text-primary transition-transform group-hover:scale-110" />
+            <span className="font-bold text-xl tracking-tight">
               Leaf AI
             </span>
           </Link>
@@ -36,17 +36,17 @@ export function Header() {
                 key={to}
                 to={to}
                 className={cn(
-                  'flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors',
+                  'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200',
                   location.pathname === to
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 <Icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{label}</span>
+                <span className="hidden md:inline">{label}</span>
               </Link>
             ))}
-            <div className="ml-2 flex items-center gap-2 pl-2 border-l border-border">
+            <div className="ml-4 flex items-center gap-3 pl-4 border-l border-border/40">
               <ModelStatusBadge />
               <ThemeToggle />
               <LanguageSwitcher />

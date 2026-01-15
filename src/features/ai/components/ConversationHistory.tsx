@@ -115,39 +115,39 @@ export function ConversationHistory() {
   }
 
   return (
-    <div className="border border-border rounded-lg bg-card p-3 sm:p-4 space-y-3 sm:space-y-4 w-full">
+    <div className="border border-border rounded-2xl bg-card p-4 sm:p-5 space-y-4 sm:space-y-5 w-full shadow-sm">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center justify-between w-full lg:cursor-default"
+        className="flex items-center justify-between w-full lg:cursor-default group"
       >
         <div className="text-left">
-          <h3 className="text-sm font-semibold">
-            {lang === 'es' ? 'Historial de Conversaciones' : 'Conversation History'}
+          <h3 className="text-base font-bold tracking-tight">
+            {lang === 'es' ? 'Conversaciones' : 'Conversations'}
           </h3>
-          <p className="text-xs text-muted-foreground hidden sm:block">
+          <p className="text-sm text-muted-foreground hidden sm:block mt-0.5">
             {lang === 'es'
-              ? 'Busca o cambia entre sesiones guardadas'
-              : 'Search or switch between saved chats'}
+              ? 'Gestiona tus chats'
+              : 'Manage your chats'}
           </p>
         </div>
         <div className="lg:hidden">
           {isExpanded ? (
-            <ChevronUp className="h-5 w-5 text-muted-foreground" />
+            <ChevronUp className="h-5 w-5 text-muted-foreground transition-transform group-hover:scale-110" />
           ) : (
-            <ChevronDown className="h-5 w-5 text-muted-foreground" />
+            <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform group-hover:scale-110" />
           )}
         </div>
       </button>
 
-      <div className={cn("space-y-2 sm:space-y-3", !isExpanded && "hidden lg:block")}>
+      <div className={cn("space-y-3 sm:space-y-4", !isExpanded && "hidden lg:block")}>
         <input
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder={lang === 'es' ? 'Buscar conversaciones...' : 'Search conversations...'}
-          className="w-full rounded-md border border-border bg-background px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm"
+          placeholder={lang === 'es' ? 'Buscar...' : 'Search...'}
+          className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
         />
-        <div className="grid gap-1.5 sm:gap-2 text-xs sm:grid-cols-2">
+        <div className="grid gap-2 sm:gap-3 text-sm sm:grid-cols-2">
           <label className="flex flex-col gap-1 sm:gap-1.5">
             <span className="text-muted-foreground">
               {lang === 'es' ? 'Carpeta' : 'Folder'}
@@ -155,7 +155,7 @@ export function ConversationHistory() {
             <select
               value={folderFilter}
               onChange={(event) => setFolderFilter(event.target.value)}
-              className="rounded-md border border-border bg-background px-1.5 sm:px-2 py-1.5 sm:py-2 text-xs sm:text-sm"
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all"
             >
               <option value="all">{lang === 'es' ? 'Todas' : 'All'}</option>
               {availableFolders.map((folder) => (
@@ -170,7 +170,7 @@ export function ConversationHistory() {
             <select
               value={tagFilter}
               onChange={(event) => setTagFilter(event.target.value)}
-              className="rounded-md border border-border bg-background px-1.5 sm:px-2 py-1.5 sm:py-2 text-xs sm:text-sm"
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all"
             >
               <option value="all">{lang === 'es' ? 'Todas' : 'All'}</option>
               {availableTags.map((tag) => (
@@ -182,7 +182,7 @@ export function ConversationHistory() {
       </div>
 
       {filteredConversations.length > 0 ? (
-        <div className={cn("space-y-2 max-h-[50vh] sm:max-h-[420px] overflow-y-auto overflow-x-hidden pr-1", !isExpanded && "hidden lg:block")}>
+        <div className={cn("space-y-2.5 max-h-[50vh] sm:max-h-[420px] overflow-y-auto overflow-x-hidden pr-1.5", !isExpanded && "hidden lg:block")}>
           {filteredConversations.map((conversation) => (
             <div
               key={conversation.id}
@@ -196,10 +196,10 @@ export function ConversationHistory() {
                 }
               }}
               className={cn(
-                'w-full rounded-lg border px-2 sm:px-3 py-2 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40',
+                'w-full rounded-xl border px-3 py-3 text-left transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/40',
                 conversation.id === activeConversationId
-                  ? 'border-primary bg-primary/10'
-                  : 'border-border/60 hover:border-primary/50 hover:bg-muted/40'
+                  ? 'border-primary bg-primary/5 shadow-sm'
+                  : 'border-border/60 hover:border-primary/40 hover:bg-muted/40'
               )}
             >
               <div className="flex items-start justify-between gap-1.5 sm:gap-2">
