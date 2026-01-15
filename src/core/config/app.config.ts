@@ -28,7 +28,7 @@ export const APP_CONFIG = {
 
   // External links
   links: {
-    github: 'https://github.com/leaf-ai/app',
+    github: 'https://github.com/dkyazzentwatwa/leaf-ai',
     donate: null,
     contact: null,
   },
