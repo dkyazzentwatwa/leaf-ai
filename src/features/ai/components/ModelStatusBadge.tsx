@@ -52,7 +52,7 @@ export function ModelStatusBadge() {
 
   return (
     <div
-      className="flex items-center gap-2 rounded-full border border-border bg-background/80 px-3 py-1 text-xs text-muted-foreground"
+      className="flex items-center gap-1.5 sm:gap-2 rounded-full border border-border bg-background/80 px-2 sm:px-3 py-1 text-xs text-muted-foreground"
       title={modelError || currentName || undefined}
     >
       <span className={cn('h-2 w-2 rounded-full', statusConfig[modelStatus].dot)} />

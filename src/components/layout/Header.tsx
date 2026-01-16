@@ -47,7 +47,7 @@ export function Header() {
                 <span className="hidden md:inline">{label}</span>
               </Link>
             ))}
-            <div className="ml-4 flex items-center gap-3 pl-4 border-l border-border/40">
+            <div className="ml-2 sm:ml-4 flex items-center gap-1.5 sm:gap-3 pl-2 sm:pl-4 border-l border-border/40">
               <ModelStatusBadge />
               <SecurityBadge />
               <ThemeToggle />

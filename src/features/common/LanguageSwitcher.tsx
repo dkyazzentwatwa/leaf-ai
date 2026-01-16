@@ -18,11 +18,11 @@ export function LanguageSwitcher() {
   return (
     <button
       onClick={handleLanguageToggle}
-      className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground border border-border rounded-xl hover:bg-muted/50 transition-all duration-200"
+      className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-sm text-muted-foreground hover:text-foreground border border-border rounded-xl hover:bg-muted/50 transition-all duration-200"
       title={`${currentLang?.nativeName || i18n.language.toUpperCase()}`}
     >
-      <Globe className="h-4 w-4" />
-      <span className="font-medium">{i18n.language.toUpperCase()}</span>
+      <Globe className="h-4 w-4 flex-shrink-0" />
+      <span className="font-medium hidden sm:inline">{i18n.language.toUpperCase()}</span>
     </button>
   )
 }
