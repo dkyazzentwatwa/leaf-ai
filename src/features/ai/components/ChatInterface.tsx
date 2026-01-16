@@ -1193,7 +1193,7 @@ export function ChatInterface({
             placeholder={lang === 'es' ? 'Escribe tu mensaje...' : 'Type your message...'}
             disabled={isGenerating}
             rows={1}
-            className="flex-1 px-3 sm:px-4 py-2 border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary bg-background disabled:opacity-50 text-sm"
+            className="flex-1 px-3 sm:px-4 py-2 border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary bg-background disabled:opacity-50 text-base sm:text-sm"
             style={{ minHeight: '40px', maxHeight: '120px' }}
           />
           {isGenerating ? (

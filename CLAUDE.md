@@ -70,8 +70,14 @@ WebGPU (hardware acceleration)
 
 4. **`aiStore`** (`src/features/ai/stores/aiStore.ts`)
    - Zustand store with persistence
-   - Manages conversations, model state, settings
+   - Manages conversations, model state, settings, personas
    - Conversations stored with messages, bookmarks, reactions
+   - Tracks custom user-created personas
+
+5. **`prompts.ts`** (`src/features/ai/services/webllm/prompts.ts`)
+   - Defines all AI personas (built-in and custom)
+   - Contains system prompts for each persona type
+   - `getSystemPrompt()` function dynamically generates prompts based on persona and language
 
 ### iOS 26+ WebGPU Support (Critical)
 
@@ -122,11 +128,16 @@ Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Embedder-Policy: require-corp
 ```
 
+**Content Security Policy (CSP)** - Required for WebLLM model downloads:
+```
+connect-src 'self' https://huggingface.co https://raw.githubusercontent.com blob:
+```
+
 These are set in:
 - `vite.config.ts` (dev + preview servers)
 - `public/_headers` (production - Netlify format)
 
-Without these headers, WebLLM's Web Workers and SharedArrayBuffer will fail.
+Without these headers, WebLLM's Web Workers and SharedArrayBuffer will fail. Without CSP allowing `raw.githubusercontent.com`, WASM files cannot be fetched and models will fail to load.
 
 ## Code Patterns & Conventions
 
@@ -201,6 +212,56 @@ The system automatically filters models by platform:
 - `workerEngine.ts`: Validates model buffer size before loading
 - Prevents iOS users from attempting to load desktop models (would crash)
 
+### Adding New Built-in AI Personas
+
+To add a new built-in persona to the app:
+
+1. **Update `AssistantType` in `prompts.ts`**:
+```typescript
+export type AssistantType =
+  | 'general'
+  | 'writer'
+  | 'coder'
+  | 'teacher'
+  | 'analyst'
+  | 'creative'
+  | 'your-new-persona'  // Add here
+```
+
+2. **Add persona definition to `BUILT_IN_PERSONAS`**:
+```typescript
+'your-new-persona': {
+  id: 'your-new-persona',
+  name: { en: 'English Name', es: 'Nombre Español' },
+  description: {
+    en: 'Brief English description',
+    es: 'Breve descripción en español'
+  },
+  systemPrompt: {
+    en: `Detailed system prompt in English...`,
+    es: `Prompt detallado del sistema en español...`
+  },
+  isBuiltIn: true,
+  icon: '🎭',  // Emoji icon
+}
+```
+
+3. **Add conversation starters to `CONVERSATION_STARTERS`**:
+```typescript
+'your-new-persona': {
+  en: ['Starter 1', 'Starter 2', 'Starter 3', 'Starter 4'],
+  es: ['Inicio 1', 'Inicio 2', 'Inicio 3', 'Inicio 4']
+}
+```
+
+4. **System prompt best practices**:
+   - Define AI's role and expertise clearly
+   - Include capabilities and limitations
+   - Specify response style/format if relevant
+   - Mention local-only processing
+   - Keep language-appropriate (formal for professional, casual for creative, etc.)
+   - Length: 200-500 words for focused personas
+
 ### Web Worker Communication
 
 AI processing runs in a separate thread to avoid blocking UI:
@@ -215,6 +276,56 @@ onmessage = (event) => {
   }
 }
 ```
+
+### AI Persona System
+
+The app supports customizable AI personas with different system prompts:
+
+**Built-in Personas** (6 total):
+- `general` - Friendly Leaf AI assistant (default)
+- `writer` - Professional writer and editor
+- `coder` - Expert software engineer
+- `teacher` - Patient educational guide
+- `analyst` - Data analyst and researcher
+- `creative` - Creative brainstorming partner
+
+**Architecture**:
+```typescript
+// prompts.ts - Define personas
+export interface Persona {
+  id: string
+  name: { en: string; es: string }
+  description: { en: string; es: string }
+  systemPrompt: { en: string; es: string }
+  isBuiltIn: boolean
+  icon?: string
+}
+
+export const BUILT_IN_PERSONAS: Record<AssistantType, Persona>
+
+// getSystemPrompt() selects prompt based on:
+// 1. Custom persona (if provided)
+// 2. Built-in persona type
+// 3. User's language (en/es)
+// 4. Optional context string
+```
+
+**Per-Conversation Persona Tracking**:
+- Each conversation stores its `personaId` in the `Conversation` interface
+- Conversations remember which persona they started with
+- Users can switch personas mid-conversation (affects new messages only)
+- Active persona stored in `aiStore.activePersonaId` for new conversations
+
+**Custom Personas**:
+- Users can create unlimited custom personas via Settings > PersonaManager
+- Custom personas stored in `aiStore.customPersonas` array
+- Persisted to localStorage
+- Must provide: name (EN), system prompt (EN)
+- Optional: name (ES), description (EN/ES), system prompt (ES), emoji icon
+
+**UI Components**:
+- `PersonaSelector` - Dropdown in ChatInterface header for quick switching
+- `PersonaManager` - Full editor in Settings for creating/editing custom personas
 
 ## Browser Compatibility
 
@@ -232,9 +343,12 @@ onmessage = (event) => {
 1. **Never use `require()` in browser code** - Use ES6 imports only
 2. **Model sizes must be accurate** - iOS crashes if models exceed buffer limits
 3. **COOP/COEP headers required** - Without them, SharedArrayBuffer unavailable
-4. **Quantization is mandatory** - Full-precision models (f32/f16) won't work
-5. **Mobile responsive** - All new UI must support mobile (sm: breakpoints)
-6. **JSX entities** - Use `&lt;` not `<` in JSX text to avoid parsing errors
+4. **CSP must allow raw.githubusercontent.com** - Required for WASM file downloads
+5. **Quantization is mandatory** - Full-precision models (f32/f16) won't work
+6. **Mobile responsive** - All new UI must support mobile (sm: breakpoints)
+7. **JSX entities** - Use `&lt;` not `<` in JSX text to avoid parsing errors
+8. **Persona system** - Built-in personas use their `id` as `assistantType`, custom personas pass through `customPersona` prop
+9. **Conversation starters** - Must be defined for ALL persona types in `CONVERSATION_STARTERS`
 
 ## Testing on iOS
 
