@@ -87,7 +87,7 @@ iOS 26+ Safari has **strict memory constraints** that required reverse engineeri
 - **GPU Buffer Limits**: iPhone 17 Pro ~1-1.2GB max GPU buffer
 - **Solution**: Platform detection + model validation before download
 - **iOS Models**: SmolLM2 135M (~360MB), SmolLM2 360M (~376MB), Qwen3 0.6B (~500MB), TinyLlama 1.1B (~697MB)
-- **Desktop Models**: Llama 3.2 3B (~2.3GB), Llama 3.1 8B (~4.5GB), Mistral 7B (~4GB), Phi-4 Mini (~2.5GB), Qwen3 4B (~3.4GB)
+- **Desktop Models**: Llama 3.2 3B (~2.3GB), Llama 3.1 8B (~4.5GB), Mistral 7B (~4GB), Qwen3 4B (~3.4GB)
 
 **Detection Flow**:
 ```typescript

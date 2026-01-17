@@ -155,17 +155,6 @@ export const AVAILABLE_MODELS = {
     performance: '2-4 tok/sec',
     quantization: 'q4f16_1',
   },
-  'Phi-4-mini-instruct-q4f16_1-MLC': {
-    name: 'Phi-4 Mini (q4)',
-    description: 'Microsoft latest - great reasoning',
-    size: '~2.5GB',
-    recommended: false,
-    minRAM: 4,
-    iosOnly: false,
-    maxBufferSizeMB: 2500,
-    performance: '3-5 tok/sec',
-    quantization: 'q4f16_1',
-  },
 } as const
 
 export interface ModelInfo {

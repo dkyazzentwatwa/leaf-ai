@@ -261,17 +261,6 @@ export function About() {
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
                   <div>
-                    <strong className="text-foreground">Phi-4 Mini (q4)</strong> - ~2.5GB
-                    <p className="text-xs mt-0.5">
-                      {lang === 'es'
-                        ? 'Último de Microsoft, excelente razonamiento. 3-5 tok/seg.'
-                        : 'Microsoft latest, great reasoning. 3-5 tok/sec.'}
-                    </p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <div>
                     <strong className="text-foreground">Gemma 2 2B (q4)</strong> - ~1.9GB
                     <p className="text-xs mt-0.5">
                       {lang === 'es'

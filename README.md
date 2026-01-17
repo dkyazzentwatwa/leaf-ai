@@ -70,7 +70,6 @@ npm run test         # Run tests with Vitest
 - **Llama 3.2 3B** (~2.3GB) - Recommended, best quality (3-7 tok/sec)
 - **Llama 3.1 8B** (~4.5GB) - High quality, best for powerful desktops (2-4 tok/sec)
 - **Mistral 7B v0.3** (~4GB) - Excellent general-purpose model (2-4 tok/sec)
-- **Phi-4 Mini** (~2.5GB) - Microsoft's latest, great reasoning (3-5 tok/sec)
 - **Gemma 2 2B** (~1.9GB) - Google's efficient model (3-6 tok/sec)
 - **Qwen3 4B** (~3.4GB) - Latest Qwen, excellent quality (3-5 tok/sec)
 - **Phi 3.5 Mini** (~1.5GB) - Good balance (4-6 tok/sec)
