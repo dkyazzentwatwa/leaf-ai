@@ -66,9 +66,13 @@ npm run test         # Run tests with Vitest
 
 ## 🧠 Available AI Models
 
-### Desktop/Android Models (1-3GB)
+### Desktop/Android Models (1-5GB)
 - **Llama 3.2 3B** (~2.3GB) - Recommended, best quality (3-7 tok/sec)
+- **Llama 3.1 8B** (~4.5GB) - High quality, best for powerful desktops (2-4 tok/sec)
+- **Mistral 7B v0.3** (~4GB) - Excellent general-purpose model (2-4 tok/sec)
+- **Phi-4 Mini** (~2.5GB) - Microsoft's latest, great reasoning (3-5 tok/sec)
 - **Gemma 2 2B** (~1.9GB) - Google's efficient model (3-6 tok/sec)
+- **Qwen3 4B** (~3.4GB) - Latest Qwen, excellent quality (3-5 tok/sec)
 - **Phi 3.5 Mini** (~1.5GB) - Good balance (4-6 tok/sec)
 - **Llama 3.2 1B** (~1.1GB) - Compact and fast (5-8 tok/sec)
 - **Qwen 2.5 1.5B** (~1GB) - Smallest full model (5-7 tok/sec)
@@ -76,8 +80,9 @@ npm run test         # Run tests with Vitest
 ### iOS Models (<1GB)
 - **SmolLM2 135M** (~360MB, 2-bit) - Recommended for iOS, ultra-compact (2-3 tok/sec)
 - **SmolLM2 360M** (~376MB, 4-bit) - Small and efficient (2-3 tok/sec)
+- **Qwen3 0.6B** (~500MB, 4-bit) - Latest Qwen3 for iOS (2-3 tok/sec)
 - **TinyLlama 1.1B** (~697MB, 4-bit) - Better quality (1-2 tok/sec)
-- **Qwen 2.5 0.5B** (~945MB, 4-bit) - Best iOS quality (1-2 tok/sec)
+- **Qwen 2.5 0.5B** (~945MB, 4-bit) - Quality iOS model (1-2 tok/sec)
 
 All models use 4-bit or 2-bit quantization for optimal performance and memory efficiency.
 

@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { Lock, Zap, Globe } from 'lucide-react'
 import { ChatInterface } from '@/features/ai/components/ChatInterface'
 import { ModelDownloader } from '@/features/ai/components/ModelDownloader'
 import { ConversationHistory } from '@/features/ai/components/ConversationHistory'
@@ -25,45 +24,6 @@ export function Chat() {
             ? 'Ejecutándose completamente en tu navegador. Sin servidores, sin seguimiento, sin compromisos.'
             : 'Running entirely in your browser. No servers, no tracking, no compromises.'}
         </p>
-
-        {/* Key Features */}
-        <div className="mt-8 sm:mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto px-4">
-          <div className="flex flex-col items-center gap-3 p-5 rounded-2xl bg-card border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg">
-            <div className="p-3 rounded-xl bg-primary/10">
-              <Lock className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-semibold mb-1">{lang === 'es' ? 'Completamente Privado' : 'Completely Private'}</h3>
-              <p className="text-sm text-muted-foreground">
-                {lang === 'es' ? 'Toda la IA se ejecuta en tu dispositivo' : 'All AI runs on your device'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center gap-3 p-5 rounded-2xl bg-card border border-border/50 hover:border-accent/30 transition-all duration-300 hover:shadow-lg">
-            <div className="p-3 rounded-xl bg-accent/10">
-              <Zap className="h-6 w-6 text-accent" />
-            </div>
-            <div>
-              <h3 className="font-semibold mb-1">{lang === 'es' ? 'Rápido y Offline' : 'Fast & Offline'}</h3>
-              <p className="text-sm text-muted-foreground">
-                {lang === 'es' ? 'Funciona sin conexión después de la descarga' : 'Works offline after download'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center gap-3 p-5 rounded-2xl bg-card border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg">
-            <div className="p-3 rounded-xl bg-primary/10">
-              <Globe className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-semibold mb-1">{lang === 'es' ? 'Gratis y Abierto' : 'Free & Open'}</h3>
-              <p className="text-sm text-muted-foreground">
-                {lang === 'es' ? 'Código abierto para todos' : 'Open source for everyone'}
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[360px,1fr]">

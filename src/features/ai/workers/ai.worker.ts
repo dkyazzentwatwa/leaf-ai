@@ -10,27 +10,6 @@ import type { WorkerRequest, WorkerResponse } from './types'
 import type { ModelId, ChatMessage } from '../services/webllm/engine'
 import { validateWorkerRequest } from './validation'
 
-// Custom models not in WebLLM's prebuilt config
-const CUSTOM_MODEL_LIST: webllm.ModelRecord[] = [
-  {
-    model: 'https://huggingface.co/llinguini/gemma-3-270m-it-q4f16_1-MLC',
-    model_id: 'gemma-3-270m-it-q4f16_1-MLC',
-    model_lib:
-      'https://huggingface.co/llinguini/gemma-3-270m-it-q4f16_1-MLC/resolve/main/libs/gemma-3-270m-it-q4f16_1-webgpu.wasm/gemma-3-270m-it-q4f16_1-webgpu.wasm',
-    vram_required_MB: 350,
-    low_resource_required: true,
-    required_features: ['shader-f16'],
-    overrides: {
-      context_window_size: 4096,
-    },
-  },
-]
-
-// Build app config with custom models + prebuilt models
-const appConfig: webllm.AppConfig = {
-  model_list: [...CUSTOM_MODEL_LIST, ...webllm.prebuiltAppConfig.model_list],
-}
-
 // Worker state
 let engine: webllm.MLCEngineInterface | null = null
 let currentModel: ModelId | null = null
@@ -96,7 +75,6 @@ async function loadModel(modelId: ModelId) {
     })
 
     engine = await webllm.CreateMLCEngine(modelId, {
-      appConfig,
       initProgressCallback: (report) => {
         const progress = Math.round(report.progress * 100)
         const stage = report.text.toLowerCase().includes('loading') ? 'loading' : 'downloading'

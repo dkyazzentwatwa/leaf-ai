@@ -7,22 +7,6 @@
 
 import * as webllm from '@mlc-ai/web-llm'
 
-// Custom models not in WebLLM's prebuilt config
-const CUSTOM_MODEL_LIST: webllm.ModelRecord[] = [
-  {
-    model: 'https://huggingface.co/llinguini/gemma-3-270m-it-q4f16_1-MLC',
-    model_id: 'gemma-3-270m-it-q4f16_1-MLC',
-    model_lib:
-      'https://huggingface.co/llinguini/gemma-3-270m-it-q4f16_1-MLC/resolve/main/libs/gemma-3-270m-it-q4f16_1-webgpu.wasm/gemma-3-270m-it-q4f16_1-webgpu.wasm',
-    vram_required_MB: 350,
-    low_resource_required: true,
-    required_features: ['shader-f16'],
-    overrides: {
-      context_window_size: 4096,
-    },
-  },
-]
-
 // Model configurations - iOS-first with mandatory 4-bit quantization
 export const AVAILABLE_MODELS = {
   // ===== iOS-ONLY MODELS (<1GB, 4-BIT QUANTIZED) =====
@@ -82,18 +66,6 @@ export const AVAILABLE_MODELS = {
     performance: '2-3 tok/sec on iPhone 17 Pro',
     quantization: 'q4f16_1',
   },
-  'gemma-3-270m-it-q4f16_1-MLC': {
-    name: 'Gemma 3 270M (q4)',
-    description: 'Ultra-tiny Google Gemma 3 - great for iOS',
-    size: '~200MB',
-    recommended: true,
-    minRAM: 1,
-    iosOnly: true,
-    maxBufferSizeMB: 350,
-    performance: '3-5 tok/sec on iPhone 17 Pro',
-    quantization: 'q4f16_1',
-  },
-
   // ===== DESKTOP/ANDROID MODELS (1-3GB, 4-BIT QUANTIZED) =====
   'Llama-3.2-3B-Instruct-q4f16_1-MLC': {
     name: 'Llama 3.2 3B (q4)',
@@ -158,6 +130,39 @@ export const AVAILABLE_MODELS = {
     minRAM: 6,
     iosOnly: false,
     maxBufferSizeMB: 3500,
+    performance: '3-5 tok/sec',
+    quantization: 'q4f16_1',
+  },
+  'Llama-3.1-8B-Instruct-q4f16_1-MLC': {
+    name: 'Llama 3.1 8B (q4)',
+    description: 'High quality Llama - best for desktop',
+    size: '~4.5GB',
+    recommended: false,
+    minRAM: 8,
+    iosOnly: false,
+    maxBufferSizeMB: 4500,
+    performance: '2-4 tok/sec',
+    quantization: 'q4f16_1',
+  },
+  'Mistral-7B-Instruct-v0.3-q4f16_1-MLC': {
+    name: 'Mistral 7B v0.3 (q4)',
+    description: 'Excellent general-purpose model',
+    size: '~4GB',
+    recommended: false,
+    minRAM: 8,
+    iosOnly: false,
+    maxBufferSizeMB: 4000,
+    performance: '2-4 tok/sec',
+    quantization: 'q4f16_1',
+  },
+  'Phi-4-mini-instruct-q4f16_1-MLC': {
+    name: 'Phi-4 Mini (q4)',
+    description: 'Microsoft latest - great reasoning',
+    size: '~2.5GB',
+    recommended: false,
+    minRAM: 4,
+    iosOnly: false,
+    maxBufferSizeMB: 2500,
     performance: '3-5 tok/sec',
     quantization: 'q4f16_1',
   },
@@ -268,14 +273,8 @@ class WebLLMEngine {
         text: 'Initializing model download...',
       })
 
-      // Build app config with custom models + prebuilt models
-      const appConfig: webllm.AppConfig = {
-        model_list: [...CUSTOM_MODEL_LIST, ...webllm.prebuiltAppConfig.model_list],
-      }
-
       // Create engine with progress callback
       this.engine = await webllm.CreateMLCEngine(modelId, {
-        appConfig,
         initProgressCallback: (report) => {
           const progress = Math.round(report.progress * 100)
 

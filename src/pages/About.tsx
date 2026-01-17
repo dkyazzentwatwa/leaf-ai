@@ -197,11 +197,22 @@ export function About() {
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
                   <div>
+                    <strong className="text-foreground">Qwen3 0.6B (q4)</strong> - ~500MB
+                    <p className="text-xs mt-0.5">
+                      {lang === 'es'
+                        ? 'Último Qwen3 para iOS. 2-3 tok/seg en iPhone 17 Pro.'
+                        : 'Latest Qwen3 for iOS. 2-3 tok/sec on iPhone 17 Pro.'}
+                    </p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <div>
                     <strong className="text-foreground">Qwen 2.5 0.5B (q4)</strong> - ~945MB
                     <p className="text-xs mt-0.5">
                       {lang === 'es'
-                        ? 'Mejor calidad para iOS (avanzado). 1-2 tok/seg en iPhone 17 Pro.'
-                        : 'Best quality iOS model (advanced). 1-2 tok/sec on iPhone 17 Pro.'}
+                        ? 'Modelo de calidad para iOS. 1-2 tok/seg en iPhone 17 Pro.'
+                        : 'Quality iOS model. 1-2 tok/sec on iPhone 17 Pro.'}
                     </p>
                   </div>
                 </li>
@@ -228,6 +239,39 @@ export function About() {
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
                   <div>
+                    <strong className="text-foreground">Llama 3.1 8B (q4)</strong> - ~4.5GB
+                    <p className="text-xs mt-0.5">
+                      {lang === 'es'
+                        ? 'Alta calidad para escritorios potentes. 2-4 tok/seg.'
+                        : 'High quality for powerful desktops. 2-4 tok/sec.'}
+                    </p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <div>
+                    <strong className="text-foreground">Mistral 7B v0.3 (q4)</strong> - ~4GB
+                    <p className="text-xs mt-0.5">
+                      {lang === 'es'
+                        ? 'Excelente modelo de propósito general. 2-4 tok/seg.'
+                        : 'Excellent general-purpose model. 2-4 tok/sec.'}
+                    </p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <div>
+                    <strong className="text-foreground">Phi-4 Mini (q4)</strong> - ~2.5GB
+                    <p className="text-xs mt-0.5">
+                      {lang === 'es'
+                        ? 'Último de Microsoft, excelente razonamiento. 3-5 tok/seg.'
+                        : 'Microsoft latest, great reasoning. 3-5 tok/sec.'}
+                    </p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <div>
                     <strong className="text-foreground">Gemma 2 2B (q4)</strong> - ~1.9GB
                     <p className="text-xs mt-0.5">
                       {lang === 'es'
@@ -239,11 +283,11 @@ export function About() {
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
                   <div>
-                    <strong className="text-foreground">Llama 3.2 1B (q4)</strong> - ~1.1GB
+                    <strong className="text-foreground">Qwen3 4B (q4)</strong> - ~3.4GB
                     <p className="text-xs mt-0.5">
                       {lang === 'es'
-                        ? 'Llama compacto. 5-8 tok/seg.'
-                        : 'Compact Llama model. 5-8 tok/sec.'}
+                        ? 'Último Qwen3, excelente calidad. 3-5 tok/seg.'
+                        : 'Latest Qwen3, excellent quality. 3-5 tok/sec.'}
                     </p>
                   </div>
                 </li>
@@ -255,6 +299,17 @@ export function About() {
                       {lang === 'es'
                         ? 'Buen equilibrio de calidad y tamaño. 4-6 tok/seg.'
                         : 'Good balance of quality and size. 4-6 tok/sec.'}
+                    </p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <div>
+                    <strong className="text-foreground">Llama 3.2 1B (q4)</strong> - ~1.1GB
+                    <p className="text-xs mt-0.5">
+                      {lang === 'es'
+                        ? 'Llama compacto. 5-8 tok/seg.'
+                        : 'Compact Llama model. 5-8 tok/sec.'}
                     </p>
                   </div>
                 </li>
@@ -481,7 +536,7 @@ export function About() {
                   • <strong>Desktop:</strong> {lang === 'es' ? 'GPU dedicada o integrada (AMD/NVIDIA/Intel)' : 'Dedicated or integrated GPU (AMD/NVIDIA/Intel)'}
                 </li>
                 <li>
-                  • <strong>{lang === 'es' ? 'Almacenamiento:' : 'Storage:'}</strong> {lang === 'es' ? '360MB-2.3GB (360MB-945MB en iOS)' : '360MB-2.3GB (360MB-945MB on iOS)'}
+                  • <strong>{lang === 'es' ? 'Almacenamiento:' : 'Storage:'}</strong> {lang === 'es' ? '360MB-4.5GB (360MB-945MB en iOS)' : '360MB-4.5GB (360MB-945MB on iOS)'}
                 </li>
                 <li>
                   • <strong>RAM:</strong> {lang === 'es' ? '4GB+ recomendado (2GB mínimo para iOS)' : '4GB+ recommended (2GB minimum for iOS)'}
