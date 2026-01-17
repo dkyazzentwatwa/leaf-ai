@@ -7,15 +7,16 @@
 
 import * as webllm from '@mlc-ai/web-llm'
 
-// Custom models not yet in WebLLM's prebuilt config
+// Custom models not in WebLLM's prebuilt config
 const CUSTOM_MODEL_LIST: webllm.ModelRecord[] = [
   {
-    model: 'https://huggingface.co/mlc-ai/gemma-3-1b-it-q4f16_1-MLC',
-    model_id: 'gemma-3-1b-it-q4f16_1-MLC',
+    model: 'https://huggingface.co/llinguini/gemma-3-270m-it-q4f16_1-MLC',
+    model_id: 'gemma-3-270m-it-q4f16_1-MLC',
     model_lib:
-      'https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/web-llm-models/v0_2_80/gemma-3-1b-it-q4f16_1-ctx4k_cs1k-webgpu.wasm',
-    vram_required_MB: 650,
+      'https://huggingface.co/llinguini/gemma-3-270m-it-q4f16_1-MLC/resolve/main/libs/gemma-3-270m-it-webgpu.wasm',
+    vram_required_MB: 350,
     low_resource_required: true,
+    required_features: ['shader-f16'],
     overrides: {
       context_window_size: 4096,
     },
@@ -81,15 +82,15 @@ export const AVAILABLE_MODELS = {
     performance: '2-3 tok/sec on iPhone 17 Pro',
     quantization: 'q4f16_1',
   },
-  'gemma-3-1b-it-q4f16_1-MLC': {
-    name: 'Gemma 3 1B (q4)',
-    description: 'Google Gemma 3 - excellent quality for iOS',
-    size: '~600MB',
-    recommended: true, // Best quality iOS model
-    minRAM: 2,
+  'gemma-3-270m-it-q4f16_1-MLC': {
+    name: 'Gemma 3 270M (q4)',
+    description: 'Ultra-tiny Google Gemma 3 - great for iOS',
+    size: '~200MB',
+    recommended: true,
+    minRAM: 1,
     iosOnly: true,
-    maxBufferSizeMB: 650,
-    performance: '2-3 tok/sec on iPhone 17 Pro',
+    maxBufferSizeMB: 350,
+    performance: '3-5 tok/sec on iPhone 17 Pro',
     quantization: 'q4f16_1',
   },
 
