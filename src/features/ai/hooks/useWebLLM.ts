@@ -180,18 +180,45 @@ export function useWebLLM(options: UseWebLLMOptions = {}) {
           temperature: 0.7,
         }
 
+        // Token buffering for debounced updates (reduces localStorage writes)
+        let tokenBuffer = ''
+        let lastFlush = Date.now()
+        const FLUSH_INTERVAL = 100 // ms
+        const MAX_BUFFER_SIZE = 200 // chars
+
+        const flushTokenBuffer = () => {
+          if (tokenBuffer.length === 0) return
+          const conv = useAIStore.getState().conversations.find((c) => c.id === convId)
+          if (!conv) {
+            console.warn('Conversation was deleted during generation')
+            tokenBuffer = ''
+            return
+          }
+          const lastMsg = conv.messages[conv.messages.length - 1]
+          if (lastMsg?.role === 'assistant') {
+            updateLastAssistantMessage(convId!, lastMsg.content + tokenBuffer)
+          }
+          tokenBuffer = ''
+          lastFlush = Date.now()
+        }
+
         if (stream) {
           generateOptions.onToken = (token) => {
-            // Update the assistant message as tokens arrive
-            const conv = useAIStore.getState().conversations.find((c) => c.id === convId)
-            const lastMsg = conv?.messages[conv.messages.length - 1]
-            if (lastMsg && lastMsg.role === 'assistant') {
-              updateLastAssistantMessage(convId!, lastMsg.content + token)
+            tokenBuffer += token
+            const now = Date.now()
+            // Flush if interval passed or buffer is large
+            if (now - lastFlush >= FLUSH_INTERVAL || tokenBuffer.length >= MAX_BUFFER_SIZE) {
+              flushTokenBuffer()
             }
           }
         }
 
         const response = await unifiedEngine.generate(messages, generateOptions)
+
+        // Flush any remaining tokens
+        if (stream) {
+          flushTokenBuffer()
+        }
 
         // If not streaming, update with full response
         if (!stream) {
@@ -267,17 +294,45 @@ export function useWebLLM(options: UseWebLLMOptions = {}) {
           temperature: 0.7,
         }
 
+        // Token buffering for debounced updates (reduces localStorage writes)
+        let tokenBuffer = ''
+        let lastFlush = Date.now()
+        const FLUSH_INTERVAL = 100 // ms
+        const MAX_BUFFER_SIZE = 200 // chars
+
+        const flushTokenBuffer = () => {
+          if (tokenBuffer.length === 0) return
+          const conv = useAIStore.getState().conversations.find((c) => c.id === conversationId)
+          if (!conv) {
+            console.warn('Conversation was deleted during generation')
+            tokenBuffer = ''
+            return
+          }
+          const lastMsg = conv.messages[conv.messages.length - 1]
+          if (lastMsg?.role === 'assistant') {
+            updateLastAssistantMessage(conversationId, lastMsg.content + tokenBuffer)
+          }
+          tokenBuffer = ''
+          lastFlush = Date.now()
+        }
+
         if (stream) {
           generateOptions.onToken = (token) => {
-            const conv = useAIStore.getState().conversations.find((c) => c.id === conversationId)
-            const lastMsg = conv?.messages[conv.messages.length - 1]
-            if (lastMsg && lastMsg.role === 'assistant') {
-              updateLastAssistantMessage(conversationId, lastMsg.content + token)
+            tokenBuffer += token
+            const now = Date.now()
+            // Flush if interval passed or buffer is large
+            if (now - lastFlush >= FLUSH_INTERVAL || tokenBuffer.length >= MAX_BUFFER_SIZE) {
+              flushTokenBuffer()
             }
           }
         }
 
         const response = await unifiedEngine.generate(messages, generateOptions)
+
+        // Flush any remaining tokens
+        if (stream) {
+          flushTokenBuffer()
+        }
 
         if (!stream) {
           updateLastAssistantMessage(conversationId, response)

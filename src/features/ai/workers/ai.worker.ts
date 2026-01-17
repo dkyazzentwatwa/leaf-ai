@@ -230,6 +230,8 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   // Validate incoming request
   if (!validateWorkerRequest(data)) {
     console.error('Invalid worker request:', data)
+    // Send error response instead of silent return
+    post({ type: 'generate-error', error: 'Invalid request format received by worker' })
     return
   }
 

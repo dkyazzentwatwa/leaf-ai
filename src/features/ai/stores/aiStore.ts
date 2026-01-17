@@ -406,6 +406,7 @@ export const useAIStore = create<AIState>()(
       // Only persist settings and conversations, not runtime state
       partialize: (state) => ({
         conversations: state.conversations,
+        activeConversationId: state.activeConversationId, // Persist active conversation
         preferredModel: state.preferredModel,
         autoLoadModel: state.autoLoadModel,
         privacyMode: state.privacyMode,

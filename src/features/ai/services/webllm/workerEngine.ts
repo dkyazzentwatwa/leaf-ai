@@ -21,6 +21,19 @@ interface DeviceCapabilities {
   deviceName: string
 }
 
+// Timeout constants for operations
+const TIMEOUTS = {
+  RESET_CHAT: 10000,    // 10s
+  GENERATE: 120000,     // 2min (models can be slow)
+  UNLOAD: 10000,        // 10s
+  GET_STATS: 5000,      // 5s
+}
+
+interface PendingPromise {
+  reject: (err: Error) => void
+  operation: string
+}
+
 class WorkerEngine {
   private worker: Worker | null = null
   private isReady = false
@@ -29,6 +42,32 @@ class WorkerEngine {
   private initializationAttempts = 0
   private readonly MAX_INIT_ATTEMPTS = 3
   private deviceCapabilities: DeviceCapabilities | null = null
+  private pendingPromises: Set<PendingPromise> = new Set()
+
+  /**
+   * Helper to wrap a promise with a timeout
+   */
+  private withTimeout<T>(
+    promise: Promise<T>,
+    ms: number,
+    errorMsg: string,
+    pendingEntry?: PendingPromise
+  ): Promise<T> {
+    const timeoutPromise = new Promise<T>((_, reject) => {
+      setTimeout(() => {
+        if (pendingEntry) {
+          this.pendingPromises.delete(pendingEntry)
+        }
+        reject(new Error(errorMsg))
+      }, ms)
+    })
+
+    return Promise.race([promise, timeoutPromise]).finally(() => {
+      if (pendingEntry) {
+        this.pendingPromises.delete(pendingEntry)
+      }
+    })
+  }
 
   /**
    * Check if browser/platform is supported
@@ -547,7 +586,15 @@ class WorkerEngine {
     const { onToken, ...restOptions } = options
     const useStreaming = !!onToken
 
-    return new Promise((resolve, reject) => {
+    const pendingEntry: PendingPromise = {
+      reject: () => {},
+      operation: 'generate'
+    }
+
+    const generatePromise = new Promise<string>((resolve, reject) => {
+      pendingEntry.reject = reject
+      this.pendingPromises.add(pendingEntry)
+
       const tokenHandler = (response: WorkerResponse) => {
         if (response.type === 'generate-token' && onToken) {
           onToken(response.token)
@@ -572,6 +619,7 @@ class WorkerEngine {
         this.off('generate-token', tokenHandler)
         this.off('generate-complete', completeHandler)
         this.off('generate-error', errorHandler)
+        this.pendingPromises.delete(pendingEntry)
       }
 
       if (useStreaming) {
@@ -586,6 +634,13 @@ class WorkerEngine {
         options: restOptions,
       })
     })
+
+    return this.withTimeout(
+      generatePromise,
+      TIMEOUTS.GENERATE,
+      'Generation timed out. The AI model may be unresponsive. Try a smaller model or refresh the page.',
+      pendingEntry
+    )
   }
 
   /**
@@ -602,16 +657,32 @@ class WorkerEngine {
   async resetChat(): Promise<void> {
     await this.init()
 
-    return new Promise((resolve) => {
+    const pendingEntry: PendingPromise = {
+      reject: () => {},
+      operation: 'resetChat'
+    }
+
+    const resetPromise = new Promise<void>((resolve, reject) => {
+      pendingEntry.reject = reject
+      this.pendingPromises.add(pendingEntry)
+
       const handler = (response: WorkerResponse) => {
         if (response.type === 'reset-complete') {
           this.off('reset-complete', handler)
+          this.pendingPromises.delete(pendingEntry)
           resolve()
         }
       }
       this.on('reset-complete', handler)
       this.send({ type: 'reset-chat' })
     })
+
+    return this.withTimeout(
+      resetPromise,
+      TIMEOUTS.RESET_CHAT,
+      'Reset chat timed out. The AI worker may be unresponsive.',
+      pendingEntry
+    )
   }
 
   /**
@@ -620,17 +691,33 @@ class WorkerEngine {
   async unload(): Promise<void> {
     if (!this.worker) return
 
-    return new Promise((resolve) => {
+    const pendingEntry: PendingPromise = {
+      reject: () => {},
+      operation: 'unload'
+    }
+
+    const unloadPromise = new Promise<void>((resolve, reject) => {
+      pendingEntry.reject = reject
+      this.pendingPromises.add(pendingEntry)
+
       const handler = (response: WorkerResponse) => {
         if (response.type === 'unload-complete') {
           this.off('unload-complete', handler)
           this.currentModel = null
+          this.pendingPromises.delete(pendingEntry)
           resolve()
         }
       }
       this.on('unload-complete', handler)
       this.send({ type: 'unload' })
     })
+
+    return this.withTimeout(
+      unloadPromise,
+      TIMEOUTS.UNLOAD,
+      'Model unload timed out.',
+      pendingEntry
+    )
   }
 
   /**
@@ -639,16 +726,32 @@ class WorkerEngine {
   async getStats(): Promise<{ tokensPerSecond: number } | null> {
     if (!this.worker) return null
 
-    return new Promise((resolve) => {
+    const pendingEntry: PendingPromise = {
+      reject: () => {},
+      operation: 'getStats'
+    }
+
+    const statsPromise = new Promise<{ tokensPerSecond: number } | null>((resolve, reject) => {
+      pendingEntry.reject = reject
+      this.pendingPromises.add(pendingEntry)
+
       const handler = (response: WorkerResponse) => {
         if (response.type === 'stats-result') {
           this.off('stats-result', handler)
+          this.pendingPromises.delete(pendingEntry)
           resolve(response.stats)
         }
       }
       this.on('stats-result', handler)
       this.send({ type: 'get-stats' })
     })
+
+    return this.withTimeout(
+      statsPromise,
+      TIMEOUTS.GET_STATS,
+      'Stats retrieval timed out.',
+      pendingEntry
+    ).catch(() => null) // Return null on timeout for stats (non-critical)
   }
 
   /**
@@ -680,8 +783,21 @@ class WorkerEngine {
       }
       this.worker = null
       this.isReady = false
-      this.messageHandlers.clear()
     }
+
+    // Reject all pending promises
+    const crashError = new Error('Worker crashed. Please refresh the page and try again.')
+    this.pendingPromises.forEach((pending) => {
+      try {
+        pending.reject(crashError)
+      } catch {
+        // Ignore if already resolved/rejected
+      }
+    })
+    this.pendingPromises.clear()
+
+    // Clear message handlers after rejecting promises
+    this.messageHandlers.clear()
 
     // Notify all handlers of the crash
     const allHandlers = this.messageHandlers.get('all')
@@ -702,6 +818,18 @@ class WorkerEngine {
       this.worker = null
       this.isReady = false
       this.currentModel = null
+
+      // Reject all pending promises
+      const terminateError = new Error('Worker was terminated.')
+      this.pendingPromises.forEach((pending) => {
+        try {
+          pending.reject(terminateError)
+        } catch {
+          // Ignore if already resolved/rejected
+        }
+      })
+      this.pendingPromises.clear()
+
       this.messageHandlers.clear()
       this.initializationAttempts = 0
     }
