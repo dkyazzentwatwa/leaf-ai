@@ -13,10 +13,15 @@ import {
   Pencil,
   X,
   AlertTriangle,
+  Palette,
+  Users,
+  Info,
 } from 'lucide-react'
 import { ModelManager } from '@/features/ai/components/ModelManager'
 import { ModelDownloader } from '@/features/ai/components/ModelDownloader'
 import { PersonaManager } from '@/features/ai/components/PersonaManager'
+import { ThemeGallery } from '@/features/theme'
+import { CollapsibleSection } from '@/components/ui/CollapsibleSection'
 import { useWebLLM } from '@/features/ai/hooks/useWebLLM'
 import { useAIStore, selectIsModelReady, selectModelStatus } from '@/features/ai/stores/aiStore'
 import { useToastStore } from '@/stores/toastStore'
@@ -178,79 +183,81 @@ export function Settings() {
   return (
     <div className="max-w-3xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-4">
-          <SettingsIcon className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold">
+      <div className="mb-6">
+        <div className="flex items-center gap-3 mb-2">
+          <SettingsIcon className="h-7 w-7 text-primary" />
+          <h1 className="text-2xl font-bold">
             {lang === 'es' ? 'Configuración' : 'Settings'}
           </h1>
         </div>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           {lang === 'es'
             ? 'Gestiona modelos de IA y preferencias de la aplicación'
             : 'Manage AI models and app preferences'}
         </p>
       </div>
 
-      {/* Model Status */}
-      <section className="mb-8">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <HardDrive className="h-5 w-5" />
-          {lang === 'es' ? 'Estado del Modelo' : 'Model Status'}
-        </h2>
+      {/* Appearance / Theme Selection */}
+      <CollapsibleSection
+        title={lang === 'es' ? 'Apariencia' : 'Appearance'}
+        icon={<Palette className="h-5 w-5" />}
+        defaultOpen
+      >
+        <ThemeGallery />
+      </CollapsibleSection>
 
-        <div className="p-4 border border-border rounded-lg bg-card">
-          {isModelReady ? (
-            <div className="flex items-center gap-3">
-              <div className="h-3 w-3 rounded-full bg-green-500 animate-pulse" />
-              <span className="font-medium text-green-600 dark:text-green-400">
-                {lang === 'es' ? 'Modelo listo' : 'Model ready'}
+      {/* Model Status - Always visible inline */}
+      <div className="mb-4 p-4 border border-border rounded-xl bg-card">
+        <div className="flex items-center gap-3">
+          <HardDrive className="h-5 w-5 text-muted-foreground" />
+          <span className="font-semibold">
+            {lang === 'es' ? 'Estado del Modelo' : 'Model Status'}
+          </span>
+          <span className="ml-auto">
+            {isModelReady ? (
+              <span className="inline-flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                {lang === 'es' ? 'Listo' : 'Ready'}
               </span>
-            </div>
-          ) : modelStatus === 'loading' || modelStatus === 'downloading' ? (
-            <div className="flex items-center gap-3">
-              <div className="h-3 w-3 rounded-full bg-yellow-500 animate-pulse" />
-              <span className="font-medium text-yellow-600 dark:text-yellow-400">
-                {lang === 'es' ? 'Cargando modelo...' : 'Loading model...'}
+            ) : modelStatus === 'loading' || modelStatus === 'downloading' ? (
+              <span className="inline-flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-400">
+                <span className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
+                {lang === 'es' ? 'Cargando...' : 'Loading...'}
               </span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <div className="h-3 w-3 rounded-full bg-gray-400" />
-              <span className="text-muted-foreground">
-                {lang === 'es' ? 'Ningún modelo cargado' : 'No model loaded'}
+            ) : (
+              <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-gray-400" />
+                {lang === 'es' ? 'Sin modelo' : 'No model'}
               </span>
-            </div>
-          )}
+            )}
+          </span>
         </div>
-      </section>
+      </div>
 
       {/* Download Model */}
       {!isModelReady && (
-        <section className="mb-8">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Download className="h-5 w-5" />
-            {lang === 'es' ? 'Descargar Modelo' : 'Download Model'}
-          </h2>
+        <CollapsibleSection
+          title={lang === 'es' ? 'Descargar Modelo' : 'Download Model'}
+          icon={<Download className="h-5 w-5" />}
+          defaultOpen
+        >
           <ModelDownloader />
-        </section>
+        </CollapsibleSection>
       )}
 
       {/* Model Management */}
-      <section className="mb-8">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Trash2 className="h-5 w-5" />
-          {lang === 'es' ? 'Gestión de Almacenamiento' : 'Storage Management'}
-        </h2>
+      <CollapsibleSection
+        title={lang === 'es' ? 'Gestión de Almacenamiento' : 'Storage Management'}
+        icon={<Trash2 className="h-5 w-5" />}
+      >
         <ModelManager />
-      </section>
+      </CollapsibleSection>
 
       {/* Prompt Templates */}
-      <section className="mb-8">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <FileText className="h-5 w-5" />
-          {lang === 'es' ? 'Plantillas de Prompt' : 'Prompt Templates'}
-        </h2>
+      <CollapsibleSection
+        title={lang === 'es' ? 'Plantillas de Prompt' : 'Prompt Templates'}
+        icon={<FileText className="h-5 w-5" />}
+      >
         <div className="border border-border rounded-lg p-4 space-y-3 bg-card">
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
@@ -307,21 +314,23 @@ export function Settings() {
             </p>
           )}
         </div>
-      </section>
+      </CollapsibleSection>
 
       {/* AI Personas */}
-      <section className="mb-8">
+      <CollapsibleSection
+        title={lang === 'es' ? 'Personas de IA' : 'AI Personas'}
+        icon={<Users className="h-5 w-5" />}
+      >
         <div className="border border-border rounded-lg p-4 bg-card">
           <PersonaManager />
         </div>
-      </section>
+      </CollapsibleSection>
 
       {/* Privacy & Backup */}
-      <section className="mb-8">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Shield className="h-5 w-5" />
-          {lang === 'es' ? 'Privacidad y Respaldo' : 'Privacy & Backup'}
-        </h2>
+      <CollapsibleSection
+        title={lang === 'es' ? 'Privacidad y Respaldo' : 'Privacy & Backup'}
+        icon={<Shield className="h-5 w-5" />}
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="border border-border rounded-lg p-4 bg-card space-y-2">
             <h3 className="font-medium text-sm">
@@ -392,14 +401,13 @@ export function Settings() {
             </p>
           </div>
         </div>
-      </section>
+      </CollapsibleSection>
 
       {/* Performance */}
-      <section className="mb-8">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Gauge className="h-5 w-5" />
-          {lang === 'es' ? 'Rendimiento' : 'Performance'}
-        </h2>
+      <CollapsibleSection
+        title={lang === 'es' ? 'Rendimiento' : 'Performance'}
+        icon={<Gauge className="h-5 w-5" />}
+      >
         <div className="border border-border rounded-lg p-4 bg-card space-y-3">
           <div className="flex items-center justify-between">
             <div>
@@ -424,30 +432,32 @@ export function Settings() {
             {lang === 'es' ? 'Último tiempo de carga' : 'Last model load time'}: {lastModelLoadMs ? `${lastModelLoadMs} ms` : (lang === 'es' ? 'Sin datos' : 'No data')}
           </div>
         </div>
-      </section>
+      </CollapsibleSection>
 
       {/* About the Models */}
-      <section className="p-4 bg-muted/50 border border-border rounded-lg">
-        <h3 className="font-medium mb-2">
-          {lang === 'es' ? 'Acerca de los Modelos' : 'About the Models'}
-        </h3>
-        <p className="text-sm text-muted-foreground mb-3">
-          {lang === 'es'
-            ? 'Leaf AI utiliza modelos de lenguaje que se ejecutan completamente en tu navegador usando WebGPU. Los modelos se descargan una vez y se almacenan localmente.'
-            : 'Leaf AI uses language models that run entirely in your browser using WebGPU. Models are downloaded once and stored locally.'}
-        </p>
-        <ul className="text-sm text-muted-foreground space-y-1">
-          <li>
-            <strong>Llama 3.2 3B</strong> - {lang === 'es' ? '~2GB, mejor calidad' : '~2GB, best quality'}
-          </li>
-          <li>
-            <strong>Phi 3.5 Mini</strong> - {lang === 'es' ? '~1.5GB, buen balance' : '~1.5GB, good balance'}
-          </li>
-          <li>
-            <strong>Qwen 2.5 1.5B</strong> - {lang === 'es' ? '~1GB, para dispositivos con menos recursos' : '~1GB, for lower-end devices'}
-          </li>
-        </ul>
-      </section>
+      <CollapsibleSection
+        title={lang === 'es' ? 'Acerca de los Modelos' : 'About the Models'}
+        icon={<Info className="h-5 w-5" />}
+      >
+        <div className="p-4 bg-muted/50 border border-border rounded-lg">
+          <p className="text-sm text-muted-foreground mb-3">
+            {lang === 'es'
+              ? 'Leaf AI utiliza modelos de lenguaje que se ejecutan completamente en tu navegador usando WebGPU. Los modelos se descargan una vez y se almacenan localmente.'
+              : 'Leaf AI uses language models that run entirely in your browser using WebGPU. Models are downloaded once and stored locally.'}
+          </p>
+          <ul className="text-sm text-muted-foreground space-y-1">
+            <li>
+              <strong>Llama 3.2 3B</strong> - {lang === 'es' ? '~2GB, mejor calidad' : '~2GB, best quality'}
+            </li>
+            <li>
+              <strong>Phi 3.5 Mini</strong> - {lang === 'es' ? '~1.5GB, buen balance' : '~1.5GB, good balance'}
+            </li>
+            <li>
+              <strong>Qwen 2.5 1.5B</strong> - {lang === 'es' ? '~1GB, para dispositivos con menos recursos' : '~1GB, for lower-end devices'}
+            </li>
+          </ul>
+        </div>
+      </CollapsibleSection>
     </div>
   )
 }

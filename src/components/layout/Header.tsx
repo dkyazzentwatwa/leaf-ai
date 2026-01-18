@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Leaf, Settings, Info, MessageCircle } from 'lucide-react'
 import { LanguageSwitcher } from '@/features/common/LanguageSwitcher'
-import { ThemeToggle } from '@/features/common/ThemeToggle'
+import { ThemePicker } from '@/features/theme'
 import { ModelStatusBadge } from '@/features/ai/components/ModelStatusBadge'
 import { SecurityBadge } from '@/components/security/SecurityBadge'
 import { cn } from '@/utils/cn'
@@ -50,7 +50,7 @@ export function Header() {
             <div className="ml-2 sm:ml-4 flex items-center gap-1.5 sm:gap-3 pl-2 sm:pl-4 border-l border-border/40">
               <ModelStatusBadge />
               <SecurityBadge />
-              <ThemeToggle />
+              <ThemePicker />
               <LanguageSwitcher />
             </div>
           </nav>
