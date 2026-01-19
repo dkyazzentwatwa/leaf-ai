@@ -17,6 +17,7 @@ export const AVAILABLE_MODELS = {
     size: '~360MB',
     recommended: true, // Recommended for iOS
     minRAM: 1,
+    platformTier: 'ios',
     iosOnly: true,
     maxBufferSizeMB: 400,
     performance: '2-3 tok/sec on iPhone 17 Pro',
@@ -28,6 +29,7 @@ export const AVAILABLE_MODELS = {
     size: '~376MB',
     recommended: false,
     minRAM: 1,
+    platformTier: 'ios',
     iosOnly: true,
     maxBufferSizeMB: 400,
     performance: '2-3 tok/sec on iPhone 17 Pro',
@@ -39,6 +41,7 @@ export const AVAILABLE_MODELS = {
     size: '~697MB',
     recommended: false,
     minRAM: 2,
+    platformTier: 'ios',
     iosOnly: true,
     maxBufferSizeMB: 700,
     performance: '1-2 tok/sec on iPhone 17 Pro',
@@ -50,6 +53,7 @@ export const AVAILABLE_MODELS = {
     size: '~945MB',
     recommended: false,
     minRAM: 2,
+    platformTier: 'ios',
     iosOnly: true,
     maxBufferSizeMB: 950,
     performance: '1-2 tok/sec on iPhone 17 Pro',
@@ -61,6 +65,7 @@ export const AVAILABLE_MODELS = {
     size: '~500MB',
     recommended: false,
     minRAM: 2,
+    platformTier: 'ios',
     iosOnly: true,
     maxBufferSizeMB: 550,
     performance: '2-3 tok/sec on iPhone 17 Pro',
@@ -71,8 +76,9 @@ export const AVAILABLE_MODELS = {
     name: 'Llama 3.2 3B (q4)',
     description: 'Best quality 4-bit model (Desktop/Android)',
     size: '~2.3GB',
-    recommended: true,
+    recommended: true, // Recommended for Desktop
     minRAM: 4,
+    platformTier: 'desktop',
     iosOnly: false,
     maxBufferSizeMB: 2300,
     performance: '3-7 tok/sec',
@@ -80,10 +86,11 @@ export const AVAILABLE_MODELS = {
   },
   'gemma-2-2b-it-q4f16_1-MLC': {
     name: 'Gemma 2 2B (q4)',
-    description: 'Google\'s efficient 4-bit model (Desktop/Android)',
+    description: 'Google\'s efficient 4-bit model (Android/Mobile)',
     size: '~1.9GB',
     recommended: false,
     minRAM: 3,
+    platformTier: 'android',
     iosOnly: false,
     maxBufferSizeMB: 1900,
     performance: '3-6 tok/sec',
@@ -91,10 +98,11 @@ export const AVAILABLE_MODELS = {
   },
   'Llama-3.2-1B-Instruct-q4f32_1-MLC': {
     name: 'Llama 3.2 1B (q4)',
-    description: 'Compact Llama model (Desktop/Android)',
+    description: 'Compact Llama model (Android/Mobile)',
     size: '~1.1GB',
     recommended: false,
     minRAM: 2,
+    platformTier: 'android',
     iosOnly: false,
     maxBufferSizeMB: 1100,
     performance: '5-8 tok/sec',
@@ -102,10 +110,11 @@ export const AVAILABLE_MODELS = {
   },
   'Phi-3.5-mini-instruct-q4f16_1-MLC': {
     name: 'Phi 3.5 Mini (q4)',
-    description: 'Good 4-bit balance (Desktop/Android)',
+    description: 'Good 4-bit balance (Android/Mobile)',
     size: '~1.5GB',
     recommended: false,
     minRAM: 3,
+    platformTier: 'android',
     iosOnly: false,
     maxBufferSizeMB: 1500,
     performance: '4-6 tok/sec',
@@ -113,10 +122,11 @@ export const AVAILABLE_MODELS = {
   },
   'Qwen2.5-1.5B-Instruct-q4f16_1-MLC': {
     name: 'Qwen 2.5 1.5B (q4)',
-    description: 'Smallest 4-bit full model (Desktop/Android)',
+    description: 'Smallest 4-bit full model (Android/Mobile)',
     size: '~1GB',
-    recommended: false,
+    recommended: true, // Recommended for Android mid-range
     minRAM: 2,
+    platformTier: 'android',
     iosOnly: false,
     maxBufferSizeMB: 1000,
     performance: '5-7 tok/sec',
@@ -128,6 +138,7 @@ export const AVAILABLE_MODELS = {
     size: '~3.4GB',
     recommended: false,
     minRAM: 6,
+    platformTier: 'desktop',
     iosOnly: false,
     maxBufferSizeMB: 3500,
     performance: '3-5 tok/sec',
@@ -139,6 +150,7 @@ export const AVAILABLE_MODELS = {
     size: '~4.5GB',
     recommended: false,
     minRAM: 8,
+    platformTier: 'desktop',
     iosOnly: false,
     maxBufferSizeMB: 4500,
     performance: '2-4 tok/sec',
@@ -150,6 +162,7 @@ export const AVAILABLE_MODELS = {
     size: '~4GB',
     recommended: false,
     minRAM: 8,
+    platformTier: 'desktop',
     iosOnly: false,
     maxBufferSizeMB: 4000,
     performance: '2-4 tok/sec',
@@ -163,7 +176,13 @@ export interface ModelInfo {
   size: string
   recommended: boolean
   minRAM: number
+
+  // Platform tier classification for device-specific filtering
+  platformTier: 'ios' | 'android' | 'desktop' | 'universal'
+
+  /** @deprecated Use platformTier instead. Kept for backwards compatibility. */
   iosOnly: boolean
+
   maxBufferSizeMB: number
   performance: string
   quantization: string

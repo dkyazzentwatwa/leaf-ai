@@ -10,7 +10,8 @@ Built with ❤️ by [the AI Flow Club](https://flow-club.techtiff.ai/)
 
 - 🔒 **Complete Privacy**: All AI processing happens on your device. No data ever leaves your browser.
 - ⚡ **WebGPU Acceleration**: Hardware-accelerated inference using WebGPU for fast responses
-- 📱 **Mobile Support**: iOS 26+ with optimized small models for mobile devices
+- 📱 **Smart Mobile Support**: Optimized for iOS 26+ and Android devices with intelligent model selection based on device capabilities
+- 🤖 **Android Optimized**: Three-tier model system automatically detects Android device RAM and recommends compatible models
 - 💾 **Offline-First**: Works completely offline after initial model download
 - 🌍 **Multi-language**: English and Spanish support
 - 💬 **Conversation Management**: Organize chats with folders, tags, and search
@@ -52,36 +53,53 @@ npm run test         # Run tests with Vitest
 
 ## 🌐 Browser Compatibility
 
-### Desktop/Android
+### Desktop
 - ✅ Chrome 113+ (recommended)
 - ✅ Edge 113+
 - ✅ Brave (latest)
 - ✅ Any WebGPU-compatible browser
 
+### Android
+- ✅ Chrome 113+ (recommended)
+- ✅ Edge 113+
+- 🎯 **Smart Model Selection**: Automatically detects device RAM and shows compatible models
+  - **Low-end** (< 4GB RAM): Ultra-small models (< 400MB)
+  - **Mid-range** (4-6GB RAM): Mobile-optimized models (400MB-2GB) ← **Most Android users**
+  - **High-end** (8GB+ RAM): Desktop-class models (1-7GB)
+
 ### iOS/iPadOS
 - ✅ Safari 26+ / iOS 26+ (WebGPU support)
 - ⚠️ iOS <26: WebGPU not available
 
-**Note**: iOS has strict memory constraints (~1.5GB WebContent limit). Leaf AI automatically detects iOS and offers only compatible ultra-small models (<1GB).
+**Platform Detection**: Leaf AI automatically detects your device's platform and RAM, showing only models that will work smoothly on your hardware. No more crashes from models that are too large!
 
 ## 🧠 Available AI Models
 
-### Desktop/Android Models (1-5GB)
-- **Llama 3.2 3B** (~2.3GB) - Recommended, best quality (3-7 tok/sec)
-- **Llama 3.1 8B** (~4.5GB) - High quality, best for powerful desktops (2-4 tok/sec)
-- **Mistral 7B v0.3** (~4GB) - Excellent general-purpose model (2-4 tok/sec)
-- **Gemma 2 2B** (~1.9GB) - Google's efficient model (3-6 tok/sec)
-- **Qwen3 4B** (~3.4GB) - Latest Qwen, excellent quality (3-5 tok/sec)
-- **Phi 3.5 Mini** (~1.5GB) - Good balance (4-6 tok/sec)
-- **Llama 3.2 1B** (~1.1GB) - Compact and fast (5-8 tok/sec)
-- **Qwen 2.5 1.5B** (~1GB) - Smallest full model (5-7 tok/sec)
+Leaf AI uses a **three-tier model system** that automatically adapts to your device:
 
-### iOS Models (<1GB)
-- **SmolLM2 135M** (~360MB, 2-bit) - Recommended for iOS, ultra-compact (2-3 tok/sec)
+### 🖥️ Desktop Tier (2-7GB)
+*For high-end Android (8GB+ RAM) and Desktop*
+- **Llama 3.2 3B** (~2.3GB) - ⭐ **Recommended**, best quality (3-7 tok/sec)
+- **Qwen3 4B** (~3.4GB) - Latest Qwen, excellent quality (3-5 tok/sec)
+- **Llama 3.1 8B** (~4.5GB) - Highest quality, best for powerful desktops (2-4 tok/sec)
+- **Mistral 7B v0.3** (~4GB) - Excellent general-purpose model (2-4 tok/sec)
+
+### 📱 Android Tier (400MB-2GB)
+*For mid-range Android (4-6GB RAM)*
+- **Qwen 2.5 1.5B** (~1GB) - ⭐ **Recommended for Android**, best quality/size ratio (5-7 tok/sec)
+- **Llama 3.2 1B** (~1.1GB) - Compact Meta Llama (5-8 tok/sec)
+- **Phi 3.5 Mini** (~1.5GB) - Microsoft's efficient model (4-6 tok/sec)
+- **Gemma 2 2B** (~1.9GB) - Google's efficient model (3-6 tok/sec)
+
+### 🍎 iOS Tier (<400MB)
+*For iOS 26+ and low-end Android (< 4GB RAM)*
+- **SmolLM2 135M** (~360MB, 2-bit) - ⭐ **Recommended for iOS**, ultra-compact (2-3 tok/sec)
 - **SmolLM2 360M** (~376MB, 4-bit) - Small and efficient (2-3 tok/sec)
 - **Qwen3 0.6B** (~500MB, 4-bit) - Latest Qwen3 for iOS (2-3 tok/sec)
 - **TinyLlama 1.1B** (~697MB, 4-bit) - Better quality (1-2 tok/sec)
 - **Qwen 2.5 0.5B** (~945MB, 4-bit) - Quality iOS model (1-2 tok/sec)
+
+**Smart Filtering**: The app automatically shows only models compatible with your device's RAM. Android mid-range users (4-6GB) see 9 models total (iOS + Android tiers), preventing crashes from oversized models.
 
 All models use 4-bit or 2-bit quantization for optimal performance and memory efficiency.
 
@@ -122,9 +140,19 @@ WebGPU (hardware acceleration)
 ### Key Components
 
 - **`unifiedEngine`**: Main entry point for all AI operations
-- **`workerEngine`**: Manages Web Worker communication and device detection
-- **`engine.ts`**: Central model registry with platform-specific filtering
+- **`workerEngine`**: Manages Web Worker communication, device detection, and RAM-based model validation
+- **`engine.ts`**: Central model registry with three-tier platform filtering (iOS/Android/Desktop)
 - **`aiStore`**: Zustand store for conversations and model state
+
+### Device Detection & Validation
+
+Leaf AI automatically detects:
+- **Platform**: iOS, Android, or Desktop
+- **RAM**: Uses `navigator.deviceMemory` (Chrome/Edge) or screen-based heuristics
+- **Device Tier**: Classifies as low-end (< 4GB), mid-range (4-6GB), or high-end (8GB+)
+- **GPU Limits**: Queries WebGPU adapter for buffer size constraints
+
+**Safety Rule**: Models are validated before loading. Android devices can only load models up to 40% of their available RAM, preventing browser crashes.
 
 See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation.
 

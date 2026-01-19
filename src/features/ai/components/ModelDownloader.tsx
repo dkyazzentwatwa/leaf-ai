@@ -44,6 +44,26 @@ const identifyModel = (cacheName: string, urls: string[]): ModelId | null => {
   return null
 }
 
+type Platform = 'ios' | 'android' | 'desktop'
+type DeviceTier = 'low-end' | 'mid-range' | 'high-end'
+
+// Platform badge component
+function PlatformBadge({ tier }: { tier: string }) {
+  const badges: Record<string, { label: string; color: string }> = {
+    ios: { label: 'iOS', color: 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' },
+    android: { label: 'Android', color: 'bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-400' },
+    desktop: { label: 'Desktop', color: 'bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400' },
+  }
+
+  const badge = badges[tier] || { label: tier, color: 'bg-gray-500/10 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400' }
+
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded whitespace-nowrap ${badge.color}`}>
+      {badge.label}
+    </span>
+  )
+}
+
 export function ModelDownloader({ onModelReady, compact = false }: ModelDownloaderProps) {
   const [engineInfo, setEngineInfo] = useState<{
     supported: boolean
@@ -52,6 +72,9 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
   } | null>(null)
   const [availableModels, setAvailableModels] = useState<Record<string, any>>({})
   const [isIOS, setIsIOS] = useState(false)
+  const [platform, setPlatform] = useState<Platform>('desktop')
+  const [deviceTier, setDeviceTier] = useState<DeviceTier>('high-end')
+  const [estimatedRAM, setEstimatedRAM] = useState<number>(8)
   const preferredModel = useAIStore((s) => s.preferredModel)
   const setPreferredModel = useAIStore((s) => s.setPreferredModel)
   const [selectedModel, setSelectedModel] = useState<ModelId>(preferredModel as ModelId)
@@ -111,16 +134,61 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
 
       setIsIOS(isIOSDevice)
 
-      // Filter models based on platform
+      // Determine platform
+      const detectedPlatform: Platform = isIOSDevice ? 'ios' : (ua.includes('Android') ? 'android' : 'desktop')
+      setPlatform(detectedPlatform)
+
+      // Detect RAM and device tier
+      const actualRAM = (navigator as any).deviceMemory || null
+      let ram = 8 // Default
+
+      if (actualRAM !== null) {
+        ram = actualRAM
+      } else if (isIOSDevice) {
+        ram = 6
+      } else if (ua.includes('Android')) {
+        // Android heuristics based on screen resolution
+        const screen = window.screen
+        const width = Math.max(screen.width, screen.height)
+        const height = Math.min(screen.width, screen.height)
+
+        if (width >= 1440 || height >= 1440) {
+          ram = 6 // Flagship
+        } else if (width >= 1080 || height >= 1080) {
+          ram = 5 // Mid-range
+        } else {
+          ram = 3 // Low-end
+        }
+      }
+
+      setEstimatedRAM(ram)
+
+      // Classify device tier
+      const tier: DeviceTier = ram < 4 ? 'low-end' : ram < 8 ? 'mid-range' : 'high-end'
+      setDeviceTier(tier)
+
+      console.log('[ModelDownloader] Device detection:', { platform: detectedPlatform, tier, ram })
+
+      // Filter models based on platform and tier
       const filtered = Object.fromEntries(
         Object.entries(AVAILABLE_MODELS).filter(([_, modelInfo]) => {
-          if (isIOSDevice) {
-            // iOS: Only show iOS-compatible models (< 400MB)
-            return modelInfo.iosOnly === true
-          } else {
-            // Desktop/Android: Only show non-iOS models (1-3GB)
-            return modelInfo.iosOnly === false
+          if (detectedPlatform === 'ios') {
+            return modelInfo.platformTier === 'ios'
           }
+
+          if (detectedPlatform === 'android') {
+            if (tier === 'low-end') {
+              return modelInfo.platformTier === 'ios' // Same as iOS
+            }
+            if (tier === 'mid-range') {
+              return ['ios', 'android'].includes(modelInfo.platformTier)
+            }
+            // high-end can see all except iOS-only
+            return modelInfo.platformTier !== 'ios'
+          }
+
+          // Desktop sees desktop + android tiers
+          return modelInfo.platformTier !== 'ios'
         })
       )
 
@@ -131,7 +199,7 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
         const firstIOSModel = Object.keys(filtered)[0] as ModelId
         // Only update if current preferred model is not iOS-compatible
         const currentModelInfo = AVAILABLE_MODELS[preferredModel as ModelId]
-        if (!currentModelInfo || !currentModelInfo.iosOnly) {
+        if (!currentModelInfo || currentModelInfo.platformTier !== 'ios') {
           setPreferredModel(firstIOSModel)
           setSelectedModel(firstIOSModel)
         }
@@ -362,8 +430,9 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
                 <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                   <span className="font-medium text-sm sm:text-base">{info.name}</span>
+                  <PlatformBadge tier={info.platformTier} />
                   {info.recommended && (
-                    <span className="text-xs bg-green-500/10 text-green-600 px-2 py-0.5 rounded whitespace-nowrap">
+                    <span className="text-xs bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-400 px-2 py-0.5 rounded whitespace-nowrap">
                       Recommended
                     </span>
                   )}
@@ -376,6 +445,15 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
                   <p className="text-xs sm:text-sm text-muted-foreground break-words">
                     {info.description}
                   </p>
+                  {/* Warning for Android mid-range selecting desktop models */}
+                  {platform === 'android' && deviceTier === 'mid-range' && info.platformTier === 'desktop' && (
+                    <div className="flex items-start gap-2 mt-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                      <AlertCircle className="h-3 w-3 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-amber-700 dark:text-amber-300">
+                        This model may be too large for your device ({estimatedRAM}GB RAM). Consider an Android-optimized model for better stability.
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <span className="text-xs sm:text-sm text-muted-foreground flex-shrink-0">{info.size}</span>
               </label>

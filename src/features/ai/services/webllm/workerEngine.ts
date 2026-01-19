@@ -12,11 +12,24 @@ import { validateWorkerRequest, validateWorkerResponse } from '../../workers/val
 
 type MessageHandler = (response: WorkerResponse) => void
 
+type DeviceTier = 'low-end' | 'mid-range' | 'high-end'
+
 interface DeviceCapabilities {
   platform: 'ios' | 'android' | 'desktop'
+
+  // Version detection
   iosVersion: number | null
+  androidVersion: number | null
+  chromeVersion: number | null
+
+  // RAM detection
   maxBufferSize: number | null
   estimatedRAM: number
+  actualRAM: number | null
+
+  // Device classification
+  deviceTier: DeviceTier
+
   webGPUAvailable: boolean
   deviceName: string
 }
@@ -265,6 +278,77 @@ class WorkerEngine {
   }
 
   /**
+   * Classify device tier based on RAM
+   */
+  private classifyDeviceTier(ramGB: number): DeviceTier {
+    if (ramGB < 4) return 'low-end'
+    if (ramGB < 8) return 'mid-range'
+    return 'high-end'
+  }
+
+  /**
+   * Detect device RAM using navigator.deviceMemory (Chrome 63+) or heuristics
+   */
+  private detectRAM(): { actual: number | null; estimated: number; tier: DeviceTier } {
+    // Use navigator.deviceMemory if available (Chrome/Edge on desktop and Android)
+    const actualRAM = (navigator as any).deviceMemory || null
+
+    if (actualRAM !== null) {
+      return {
+        actual: actualRAM,
+        estimated: actualRAM,
+        tier: this.classifyDeviceTier(actualRAM)
+      }
+    }
+
+    // Fallback heuristics for browsers without deviceMemory
+    const isIOS = this.isIOS()
+    const ua = navigator.userAgent
+    let estimated = 8 // Default desktop assumption
+
+    if (isIOS) {
+      estimated = 6 // iPhone average
+    } else if (ua.includes('Android')) {
+      // Android heuristics based on screen resolution
+      const screen = window.screen
+      const width = Math.max(screen.width, screen.height)
+      const height = Math.min(screen.width, screen.height)
+
+      if (width >= 1440 || height >= 1440) {
+        estimated = 6 // Likely flagship (1440p+)
+      } else if (width >= 1080 || height >= 1080) {
+        estimated = 5 // Mid-range (1080p)
+      } else {
+        estimated = 3 // Low-end (720p or lower)
+      }
+    }
+
+    return {
+      actual: null,
+      estimated,
+      tier: this.classifyDeviceTier(estimated)
+    }
+  }
+
+  /**
+   * Detect Android version from user agent
+   */
+  private detectAndroidVersion(): number | null {
+    const ua = navigator.userAgent
+    const match = ua.match(/Android (\d+)/)
+    return match ? parseInt(match[1], 10) : null
+  }
+
+  /**
+   * Detect Chrome version from user agent
+   */
+  private detectChromeVersion(): number | null {
+    const ua = navigator.userAgent
+    const match = ua.match(/Chrome\/(\d+)/)
+    return match ? parseInt(match[1], 10) : null
+  }
+
+  /**
    * Detect device capabilities and platform
    * Includes platform type, iOS version, GPU buffer limits, and RAM estimation
    */
@@ -316,14 +400,22 @@ class WorkerEngine {
       }
     }
 
-    // Estimate RAM (navigator.deviceMemory is desktop-only)
-    const estimatedRAM = (navigator as any).deviceMemory || (isIOS ? 6 : 8)
+    // Detect RAM and device tier
+    const ramInfo = this.detectRAM()
+
+    // Detect Android and Chrome versions
+    const androidVersion = this.detectAndroidVersion()
+    const chromeVersion = this.detectChromeVersion()
 
     const capabilities: DeviceCapabilities = {
       platform: isIOS ? 'ios' : (ua.includes('Android') ? 'android' : 'desktop'),
       iosVersion,
+      androidVersion,
+      chromeVersion,
       maxBufferSize,
-      estimatedRAM,
+      estimatedRAM: ramInfo.estimated,
+      actualRAM: ramInfo.actual,
+      deviceTier: ramInfo.tier,
       webGPUAvailable,
       deviceName
     }
@@ -492,12 +584,13 @@ class WorkerEngine {
       return { valid: false, error: `Model ${modelId} not found` }
     }
 
-    const { platform, maxBufferSize } = this.deviceCapabilities
+    const { platform, maxBufferSize, estimatedRAM, deviceTier } = this.deviceCapabilities
 
     // iOS validation
     if (platform === 'ios') {
-      // Check if model is iOS-compatible
-      if (!modelInfo.iosOnly) {
+      // Check if model is iOS-compatible (use platformTier, fallback to iosOnly)
+      const isIOSCompatible = modelInfo.platformTier === 'ios' || modelInfo.iosOnly
+      if (!isIOSCompatible) {
         return {
           valid: false,
           error: `${modelInfo.name} (${modelInfo.size}) is too large for iOS. Please select SmolLM2 135M or TinyLlama 1.1B.`
@@ -519,7 +612,38 @@ class WorkerEngine {
       return { valid: true }
     }
 
-    // Desktop/Android - all models allowed
+    // Android validation
+    if (platform === 'android') {
+      const maxModelSizeMB = estimatedRAM * 1024 * 0.4 // 40% of RAM as safe limit
+      const modelSizeMB = modelInfo.maxBufferSizeMB
+
+      // Block if model exceeds safe RAM limit
+      if (modelSizeMB > maxModelSizeMB) {
+        return {
+          valid: false,
+          error: `${modelInfo.name} (${modelInfo.size}) may be too large for your device (${estimatedRAM}GB RAM). Try a smaller model.`
+        }
+      }
+
+      // Low-end devices: Only allow iOS tier models
+      if (deviceTier === 'low-end' && modelInfo.platformTier !== 'ios') {
+        return {
+          valid: false,
+          error: `Your device has limited RAM (${estimatedRAM}GB). Please select a model < 400MB for best stability.`
+        }
+      }
+
+      // Mid-range devices: Warn about desktop models (but don't block)
+      if (deviceTier === 'mid-range' && modelInfo.platformTier === 'desktop') {
+        console.warn(`[WorkerEngine] ⚠️ Mid-range Android (${estimatedRAM}GB RAM) loading desktop model ${modelId} - may be unstable`)
+        // Allow with warning, don't block
+      }
+
+      console.log(`[WorkerEngine] ✅ Model ${modelId} validated for Android ${deviceTier} (${estimatedRAM}GB RAM)`)
+      return { valid: true }
+    }
+
+    // Desktop - all models allowed
     return { valid: true }
   }
 

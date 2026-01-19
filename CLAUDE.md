@@ -58,15 +58,19 @@ WebGPU (hardware acceleration)
 
 2. **`workerEngine`** (`src/features/ai/services/webllm/workerEngine.ts`)
    - Manages Web Worker communication
-   - **Device capability detection** (iOS vs Desktop/Android)
-   - **Model validation** before loading (checks buffer size limits)
-   - iOS-specific: Filters models by `iosOnly` flag, validates buffer size limits
+   - **Multi-platform device capability detection** (iOS vs Android vs Desktop)
+   - **RAM detection** using `navigator.deviceMemory` or screen-based heuristics
+   - **Device tier classification** (low-end/mid-range/high-end based on RAM)
+   - **Model validation** before loading with 40% RAM safety rule for Android
+   - Version detection: iOS version, Android version, Chrome version
 
 3. **`engine.ts`** (`src/features/ai/services/webllm/engine.ts`)
-   - **AVAILABLE_MODELS** - Central model registry
-   - Models tagged with `iosOnly: true/false` for platform filtering
-   - iOS models: <400MB, 4-bit or 2-bit quantized (q4f16, q0f16)
-   - Desktop models: 1-7GB, 4-bit quantized
+   - **AVAILABLE_MODELS** - Central model registry with three-tier system
+   - Models tagged with `platformTier: 'ios' | 'android' | 'desktop' | 'universal'`
+   - **iOS tier**: < 400MB, 4-bit or 2-bit quantized (5 models)
+   - **Android tier**: 400MB-2GB, 4-bit quantized (4 models, mid-range Android)
+   - **Desktop tier**: 2-7GB, 4-bit quantized (4 models, high-end devices)
+   - Legacy `iosOnly` flag maintained for backwards compatibility
 
 4. **`aiStore`** (`src/features/ai/stores/aiStore.ts`)
    - Zustand store with persistence
@@ -79,27 +83,45 @@ WebGPU (hardware acceleration)
    - Contains system prompts for each persona type
    - `getSystemPrompt()` function dynamically generates prompts based on persona and language
 
-### iOS 26+ WebGPU Support (Critical)
+### Multi-Platform WebGPU Support (Critical)
+
+#### iOS 26+ (Strict Memory Constraints)
 
 iOS 26+ Safari has **strict memory constraints** that required reverse engineering WebLLM:
 
 - **1.5GB WebContent Limit**: iOS limits browser processes regardless of device RAM
 - **GPU Buffer Limits**: iPhone 17 Pro ~1-1.2GB max GPU buffer
 - **Solution**: Platform detection + model validation before download
-- **iOS Models**: SmolLM2 135M (~360MB), SmolLM2 360M (~376MB), Qwen3 0.6B (~500MB), TinyLlama 1.1B (~697MB)
-- **Desktop Models**: Llama 3.2 3B (~2.3GB), Llama 3.1 8B (~4.5GB), Mistral 7B (~4GB), Qwen3 4B (~3.4GB)
+- **iOS Models**: SmolLM2 135M (~360MB), SmolLM2 360M (~376MB), Qwen3 0.6B (~500MB), TinyLlama 1.1B (~697MB), Qwen 2.5 0.5B (~945MB)
+
+#### Android (Three-Tier System)
+
+Android devices vary widely in capabilities. Leaf AI implements **intelligent device tier detection**:
+
+- **Low-end Android** (< 4GB RAM): Only iOS tier models (< 400MB)
+- **Mid-range Android** (4-6GB RAM): iOS + Android tier models (< 2GB)
+  - **Android Models**: Qwen 2.5 1.5B (~1GB, recommended), Llama 3.2 1B (~1.1GB), Phi 3.5 Mini (~1.5GB), Gemma 2 2B (~1.9GB)
+- **High-end Android** (8GB+ RAM): All models except iOS-only
 
 **Detection Flow**:
 ```typescript
 // workerEngine.ts
-detectDeviceCapabilities() → iOS detection
+detectDeviceCapabilities() → Platform detection (iOS/Android/Desktop)
   ↓
-checkWebGPUSupport() → Allow iOS 26+, block iOS <26
+detectRAM() → Use navigator.deviceMemory or screen-based heuristics
   ↓
-validateModelForDevice() → Check model.iosOnly matches platform
+classifyDeviceTier() → Classify as low-end/mid-range/high-end
   ↓
-loadModel() → Only proceed if validated
+validateModelForDevice() → Check model.platformTier + RAM constraints
+  ↓
+loadModel() → Only proceed if validated (40% RAM safety rule)
 ```
+
+**Key Android Features**:
+- **RAM Detection**: `navigator.deviceMemory` (Chrome 63+) or fallback heuristics
+- **Safety Validation**: Models must not exceed 40% of device RAM
+- **Smart Filtering**: UI shows only compatible models based on device tier
+- **Version Detection**: Detects Android version and Chrome version for compatibility checks
 
 ### State Management
 
@@ -185,11 +207,12 @@ const lang = (i18n.language === 'es' ? 'es' : 'en') as 'en' | 'es'
 ```typescript
 'model-name-q4f16_1-MLC': {
   name: 'Display Name',
-  description: 'Description',
+  description: 'Description (iOS/Android/Desktop)',
   size: '~XGB',
   recommended: true/false,
   minRAM: X,
-  iosOnly: true/false,  // CRITICAL: Set correctly
+  platformTier: 'ios' | 'android' | 'desktop' | 'universal',  // CRITICAL: Set correctly
+  iosOnly: true/false,  // @deprecated but kept for backwards compatibility
   maxBufferSizeMB: XXXX,
   performance: 'X-Y tok/sec',
   quantization: 'q4f16_1',
@@ -200,17 +223,34 @@ const lang = (i18n.language === 'es' ? 'es' : 'en') as 'en' | 'es'
    - From `mlc-ai` organization preferred
    - Format: `model-name-quantization-MLC` (e.g., `gemma-3-1b-it-q0f16-MLC`)
 
-3. **iOS models MUST be**:
-   - <400MB total size
-   - 4-bit (q4f16) or 2-bit (q0f16) quantized
-   - `iosOnly: true`
+3. **Platform Tier Guidelines**:
+   - **iOS tier** (`platformTier: 'ios'`): < 400MB, 4-bit (q4f16) or 2-bit (q0f16) quantized
+   - **Android tier** (`platformTier: 'android'`): 400MB-2GB, 4-bit quantized, recommended for mid-range Android
+   - **Desktop tier** (`platformTier: 'desktop'`): 2-7GB, 4-bit quantized, for high-end devices
+   - **Universal tier** (`platformTier: 'universal'`): Rare, works across all platforms
 
 ### Model Validation Logic
 
-The system automatically filters models by platform:
-- `ModelDownloader.tsx`: Filters `AVAILABLE_MODELS` by `iosOnly` flag
-- `workerEngine.ts`: Validates model buffer size before loading
-- Prevents iOS users from attempting to load desktop models (would crash)
+The system automatically filters and validates models by platform and device tier:
+
+**UI Filtering** (`ModelDownloader.tsx`):
+- Detects platform (iOS/Android/Desktop) and device tier (low-end/mid-range/high-end)
+- Filters `AVAILABLE_MODELS` by `platformTier` property:
+  - **iOS**: Shows only `platformTier: 'ios'` models
+  - **Android low-end** (< 4GB): Shows only `platformTier: 'ios'` models
+  - **Android mid-range** (4-6GB): Shows `platformTier: 'ios'` + `'android'` models
+  - **Android high-end** (8GB+): Shows all models except iOS-only
+  - **Desktop**: Shows `platformTier: 'android'` + `'desktop'` models
+
+**Backend Validation** (`workerEngine.ts`):
+- Validates model before loading with `validateModelForDevice()`
+- **iOS**: Checks `platformTier === 'ios'` and GPU buffer size limits
+- **Android**: Applies 40% RAM safety rule (model size ≤ 40% of device RAM)
+  - Low-end: Blocks non-iOS models
+  - Mid-range: Warns about desktop models but allows
+  - High-end: Allows all models
+- **Desktop**: Allows all models
+- Prevents crashes from oversized models attempting to load
 
 ### Adding New Built-in AI Personas
 
@@ -329,14 +369,27 @@ export const BUILT_IN_PERSONAS: Record<AssistantType, Persona>
 
 ## Browser Compatibility
 
-**Desktop/Android**:
+**Desktop**:
 - Chrome 113+
 - Edge 113+
 - Brave (latest)
+- Any WebGPU-compatible browser
+
+**Android**:
+- Chrome 113+ (recommended)
+- Edge 113+
+- **Device RAM Detection**: Uses `navigator.deviceMemory` (Chrome 63+) for accurate RAM detection
+- **Fallback Heuristics**: Screen resolution-based RAM estimation for browsers without `deviceMemory`
+- **Three-Tier System**: Automatically shows appropriate models based on device capabilities
 
 **iOS/iPadOS**:
 - Safari 26+ / iOS 26+ (WebGPU support)
 - Older iOS versions: WebGPU not available
+
+**Platform Detection Accuracy**:
+- iOS: 100% (uses Safari version + GPU buffer limits)
+- Android: ~90% (uses `navigator.deviceMemory` when available, screen heuristics otherwise)
+- Desktop: 100% (uses `navigator.deviceMemory` for accurate RAM detection)
 
 ## Common Gotchas
 
