@@ -9,10 +9,16 @@ import type { WorkerRequest, WorkerResponse } from '../../workers/types'
 import type { ModelId, ModelLoadProgress, ChatMessage, GenerateOptions } from './engine'
 import { AVAILABLE_MODELS } from './engine'
 import { validateWorkerRequest, validateWorkerResponse } from '../../workers/validation'
+import {
+  IOS_WEBGPU_MIN_VERSION,
+  detectBasicDeviceCapabilities,
+  getIOSSafariVersion as getIOSSafariVersionFromUA,
+  isIOSDevice as isIOSDeviceFromNavigator,
+  supportsRequiredIOSWebGPUVersion,
+  type DeviceTier,
+} from './deviceCapabilities'
 
 type MessageHandler = (response: WorkerResponse) => void
-
-type DeviceTier = 'low-end' | 'mid-range' | 'high-end'
 
 interface DeviceCapabilities {
   platform: 'ios' | 'android' | 'desktop'
@@ -36,6 +42,7 @@ interface DeviceCapabilities {
 
 // Timeout constants for operations
 const TIMEOUTS = {
+  LOAD_MODEL: 180000,  // 3min (initial download can be large)
   RESET_CHAT: 10000,    // 10s
   GENERATE: 120000,     // 2min (models can be slow)
   UNLOAD: 10000,        // 10s
@@ -228,12 +235,7 @@ class WorkerEngine {
    */
   private isIOS(): boolean {
     if (typeof navigator === 'undefined') return false
-
-    const ua = navigator.userAgent
-    const isIOSUA = /iPad|iPhone|iPod/.test(ua)
-    const isIPadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1
-
-    return isIOSUA || isIPadOS
+    return isIOSDeviceFromNavigator(navigator)
   }
 
   /**
@@ -242,22 +244,7 @@ class WorkerEngine {
    */
   private getIOSSafariVersion(): number | null {
     if (typeof navigator === 'undefined') return null
-
-    const ua = navigator.userAgent
-
-    // Check for Safari version (e.g., "Version/18.0" in Safari on iOS/macOS)
-    const safariMatch = ua.match(/Version\/(\d+)/)
-    if (safariMatch) {
-      return parseInt(safariMatch[1], 10)
-    }
-
-    // Check for iOS version in OS string (e.g., "iPhone OS 18_0")
-    const iosMatch = ua.match(/OS (\d+)[_\d]*/)
-    if (iosMatch) {
-      return parseInt(iosMatch[1], 10)
-    }
-
-    return null
+    return getIOSSafariVersionFromUA(navigator)
   }
 
   /**
@@ -265,87 +252,7 @@ class WorkerEngine {
    * iOS 18+ / Safari 18+ supports WebGPU
    */
   private supportsWebGPUVersion(): boolean {
-    const version = this.getIOSSafariVersion()
-
-    // If we can't determine version but WebGPU API exists, assume it's supported
-    const nav = navigator as Navigator & { gpu?: GPU }
-    if (version === null && nav.gpu) {
-      return true
-    }
-
-    // iOS/Safari 18+ supports WebGPU
-    return version !== null && version >= 18
-  }
-
-  /**
-   * Classify device tier based on RAM
-   */
-  private classifyDeviceTier(ramGB: number): DeviceTier {
-    if (ramGB < 4) return 'low-end'
-    if (ramGB < 8) return 'mid-range'
-    return 'high-end'
-  }
-
-  /**
-   * Detect device RAM using navigator.deviceMemory (Chrome 63+) or heuristics
-   */
-  private detectRAM(): { actual: number | null; estimated: number; tier: DeviceTier } {
-    // Use navigator.deviceMemory if available (Chrome/Edge on desktop and Android)
-    const actualRAM = (navigator as any).deviceMemory || null
-
-    if (actualRAM !== null) {
-      return {
-        actual: actualRAM,
-        estimated: actualRAM,
-        tier: this.classifyDeviceTier(actualRAM)
-      }
-    }
-
-    // Fallback heuristics for browsers without deviceMemory
-    const isIOS = this.isIOS()
-    const ua = navigator.userAgent
-    let estimated = 8 // Default desktop assumption
-
-    if (isIOS) {
-      estimated = 6 // iPhone average
-    } else if (ua.includes('Android')) {
-      // Android heuristics based on screen resolution
-      const screen = window.screen
-      const width = Math.max(screen.width, screen.height)
-      const height = Math.min(screen.width, screen.height)
-
-      if (width >= 1440 || height >= 1440) {
-        estimated = 6 // Likely flagship (1440p+)
-      } else if (width >= 1080 || height >= 1080) {
-        estimated = 5 // Mid-range (1080p)
-      } else {
-        estimated = 3 // Low-end (720p or lower)
-      }
-    }
-
-    return {
-      actual: null,
-      estimated,
-      tier: this.classifyDeviceTier(estimated)
-    }
-  }
-
-  /**
-   * Detect Android version from user agent
-   */
-  private detectAndroidVersion(): number | null {
-    const ua = navigator.userAgent
-    const match = ua.match(/Android (\d+)/)
-    return match ? parseInt(match[1], 10) : null
-  }
-
-  /**
-   * Detect Chrome version from user agent
-   */
-  private detectChromeVersion(): number | null {
-    const ua = navigator.userAgent
-    const match = ua.match(/Chrome\/(\d+)/)
-    return match ? parseInt(match[1], 10) : null
+    return supportsRequiredIOSWebGPUVersion(navigator, IOS_WEBGPU_MIN_VERSION)
   }
 
   /**
@@ -353,32 +260,12 @@ class WorkerEngine {
    * Includes platform type, iOS version, GPU buffer limits, and RAM estimation
    */
   private async detectDeviceCapabilities(): Promise<DeviceCapabilities> {
-    const ua = navigator.userAgent
-
-    // iOS Detection (including iPadOS)
-    const isIOS = this.isIOS()
-
-    // Get iOS/Safari version
-    const iosVersion = isIOS ? this.getIOSSafariVersion() : null
-
-    // Device name detection
-    let deviceName = 'Unknown Device'
-    if (ua.includes('iPhone')) {
-      if (ua.includes('iPhone17')) deviceName = 'iPhone 17 Pro'
-      else if (ua.includes('iPhone16')) deviceName = 'iPhone 16 Pro'
-      else if (ua.includes('iPhone15')) deviceName = 'iPhone 15 Pro'
-      else deviceName = 'iPhone'
-    } else if (ua.includes('iPad')) {
-      deviceName = 'iPad'
-    }
-
-    // Check WebGPU availability
+    const baseCapabilities = detectBasicDeviceCapabilities(navigator)
     const nav = navigator as Navigator & { gpu?: GPU }
-    const webGPUAvailable = !!nav.gpu
 
     // Query GPU buffer size limits
     let maxBufferSize: number | null = null
-    if (webGPUAvailable && nav.gpu) {
+    if (baseCapabilities.webGPUAvailable && nav.gpu) {
       try {
         const adapter = await Promise.race([
           nav.gpu.requestAdapter(),
@@ -400,24 +287,9 @@ class WorkerEngine {
       }
     }
 
-    // Detect RAM and device tier
-    const ramInfo = this.detectRAM()
-
-    // Detect Android and Chrome versions
-    const androidVersion = this.detectAndroidVersion()
-    const chromeVersion = this.detectChromeVersion()
-
     const capabilities: DeviceCapabilities = {
-      platform: isIOS ? 'ios' : (ua.includes('Android') ? 'android' : 'desktop'),
-      iosVersion,
-      androidVersion,
-      chromeVersion,
+      ...baseCapabilities,
       maxBufferSize,
-      estimatedRAM: ramInfo.estimated,
-      actualRAM: ramInfo.actual,
-      deviceTier: ramInfo.tier,
-      webGPUAvailable,
-      deviceName
     }
 
     console.log('[WorkerEngine] Device capabilities:', capabilities)
@@ -439,7 +311,7 @@ class WorkerEngine {
         const version = this.getIOSSafariVersion()
         return {
           supported: false,
-          error: `WebGPU requires iOS 18+ or Safari 18+. You have version ${version || 'unknown'}. Please update your device to use local AI.`
+          error: `WebGPU requires iOS ${IOS_WEBGPU_MIN_VERSION}+ or Safari ${IOS_WEBGPU_MIN_VERSION}+. You have version ${version || 'unknown'}. Please update your device to use local AI.`
         }
       }
 
@@ -447,13 +319,13 @@ class WorkerEngine {
         const safariVersion = this.getIOSSafariVersion()
         return {
           supported: false,
-          error: `WebGPU requires Safari 18+. You have Safari ${safariVersion || 'unknown'}. Please update your browser.`
+          error: `WebGPU requires Safari ${IOS_WEBGPU_MIN_VERSION}+. You have Safari ${safariVersion || 'unknown'}. Please update your browser.`
         }
       }
 
       return {
         supported: false,
-        error: 'WebGPU is not supported in this browser. Please use Chrome 113+, Edge 113+, or update to Safari 18+.'
+        error: `WebGPU is not supported in this browser. Please use Chrome 113+, Edge 113+, or update to Safari ${IOS_WEBGPU_MIN_VERSION}+.`
       }
     }
 
@@ -499,11 +371,11 @@ class WorkerEngine {
     this.deviceCapabilities = await this.detectDeviceCapabilities()
     const { platform, iosVersion, maxBufferSize, webGPUAvailable, deviceName } = this.deviceCapabilities
 
-    // Block iOS < 26 (no WebGPU)
-    if (platform === 'ios' && iosVersion !== null && iosVersion < 26) {
+    // Block older iOS/Safari versions.
+    if (platform === 'ios' && iosVersion !== null && iosVersion < IOS_WEBGPU_MIN_VERSION) {
       return {
         supported: false,
-        error: `WebGPU requires iOS 26+. Your device (iOS ${iosVersion}) doesn't support it yet. Please update to iOS 26 or later.`
+        error: `WebGPU requires iOS ${IOS_WEBGPU_MIN_VERSION}+. Your device (iOS ${iosVersion}) doesn't support it yet. Please update to iOS ${IOS_WEBGPU_MIN_VERSION} or later.`
       }
     }
 
@@ -511,13 +383,13 @@ class WorkerEngine {
     if (!webGPUAvailable) {
       return {
         supported: false,
-        error: 'WebGPU not available. Please use Chrome 113+, Edge 113+, or Safari 26+ on iOS 26+.'
+        error: `WebGPU not available. Please use Chrome 113+, Edge 113+, or Safari ${IOS_WEBGPU_MIN_VERSION}+ on iOS ${IOS_WEBGPU_MIN_VERSION}+.`
       }
     }
 
-    // ===== iOS 26+ DETECTED - ALLOW WITH WARNINGS =====
+    // ===== iOS detected - allow with warnings =====
     if (platform === 'ios') {
-      console.log(`[WorkerEngine] ✅ iOS 26+ detected: ${deviceName}`)
+      console.log(`[WorkerEngine] ✅ iOS ${IOS_WEBGPU_MIN_VERSION}+ detected: ${deviceName}`)
       console.log('[WorkerEngine] WebGPU supported, but strict memory limits apply')
       console.log('[WorkerEngine] Buffer size:', maxBufferSize ? `${(maxBufferSize / 1024 / 1024).toFixed(0)}MB` : 'unknown')
       console.warn('[WorkerEngine] ⚠️  iOS WebContent limit: 1.5GB (system-level)')
@@ -662,7 +534,17 @@ class WorkerEngine {
       throw new Error(validation.error || 'Model not compatible with device')
     }
 
-    return new Promise((resolve, reject) => {
+    const pendingEntry: PendingPromise = {
+      reject: () => {},
+      operation: 'loadModel',
+    }
+
+    let cleanup: () => void = () => {}
+
+    const loadPromise = new Promise<void>((resolve, reject) => {
+      pendingEntry.reject = reject
+      this.pendingPromises.add(pendingEntry)
+
       const progressHandler = (response: WorkerResponse) => {
         if (response.type === 'load-progress') {
           onProgress?.(response.progress)
@@ -684,10 +566,11 @@ class WorkerEngine {
         }
       }
 
-      const cleanup = () => {
+      cleanup = () => {
         this.off('load-progress', progressHandler)
         this.off('load-complete', completeHandler)
         this.off('load-error', errorHandler)
+        this.pendingPromises.delete(pendingEntry)
       }
 
       this.on('load-progress', progressHandler)
@@ -695,6 +578,16 @@ class WorkerEngine {
       this.on('load-error', errorHandler)
 
       this.send({ type: 'load-model', modelId })
+    })
+
+    return this.withTimeout(
+      loadPromise,
+      TIMEOUTS.LOAD_MODEL,
+      'Model load timed out. The model may be too large or your device may be under heavy memory pressure.',
+      pendingEntry
+    ).catch((error) => {
+      cleanup()
+      throw error
     })
   }
 
@@ -897,6 +790,7 @@ class WorkerEngine {
    */
   private handleWorkerCrash(error: ErrorEvent) {
     console.error('Worker crashed:', error)
+    const allHandlers = this.messageHandlers.get('all') || []
 
     // Clean up the crashed worker
     if (this.worker) {
@@ -920,17 +814,15 @@ class WorkerEngine {
     })
     this.pendingPromises.clear()
 
-    // Clear message handlers after rejecting promises
-    this.messageHandlers.clear()
-
     // Notify all handlers of the crash
-    const allHandlers = this.messageHandlers.get('all')
-    if (allHandlers) {
-      allHandlers.forEach((handler) => handler({
-        type: 'load-error' as any,
-        error: 'Worker crashed. Please try using Chrome or a desktop browser.'
-      }))
+    const crashResponse: WorkerResponse = {
+      type: 'load-error',
+      error: 'Worker crashed. Please try using Chrome or a desktop browser.',
     }
+    allHandlers.forEach((handler) => handler(crashResponse))
+
+    // Clear message handlers after notifying subscribers.
+    this.messageHandlers.clear()
   }
 
   /**

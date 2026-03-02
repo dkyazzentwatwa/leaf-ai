@@ -11,6 +11,28 @@
 const ENCRYPTION_KEY_NAME = 'leaf-ai-encryption-key'
 const SALT_KEY_NAME = 'leaf-ai-salt'
 const ITERATIONS = 100000 // PBKDF2 iterations for key derivation
+const inMemoryStorage = new Map<string, string>()
+
+function getStorage(): Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> {
+  if (
+    typeof localStorage !== 'undefined' &&
+    typeof localStorage.getItem === 'function' &&
+    typeof localStorage.setItem === 'function' &&
+    typeof localStorage.removeItem === 'function'
+  ) {
+    return localStorage
+  }
+
+  return {
+    getItem: (key: string) => inMemoryStorage.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      inMemoryStorage.set(key, value)
+    },
+    removeItem: (key: string) => {
+      inMemoryStorage.delete(key)
+    },
+  }
+}
 
 export interface EncryptionResult {
   ciphertext: string
@@ -26,13 +48,14 @@ export interface EncryptionResult {
  */
 async function getOrCreateKey(password: string): Promise<CryptoKey> {
   const encoder = new TextEncoder()
+  const storage = getStorage()
 
   // Get or create salt
-  let salt = localStorage.getItem(SALT_KEY_NAME)
+  let salt = storage.getItem(SALT_KEY_NAME)
   if (!salt) {
     const saltArray = crypto.getRandomValues(new Uint8Array(16))
     salt = btoa(String.fromCharCode(...saltArray))
-    localStorage.setItem(SALT_KEY_NAME, salt)
+    storage.setItem(SALT_KEY_NAME, salt)
   }
 
   const saltBuffer = Uint8Array.from(atob(salt), c => c.charCodeAt(0))
@@ -203,8 +226,9 @@ export async function decryptObject(
  * ```
  */
 export function clearEncryptionKeys(): void {
-  localStorage.removeItem(SALT_KEY_NAME)
-  localStorage.removeItem(ENCRYPTION_KEY_NAME)
+  const storage = getStorage()
+  storage.removeItem(SALT_KEY_NAME)
+  storage.removeItem(ENCRYPTION_KEY_NAME)
 }
 
 /**

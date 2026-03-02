@@ -6,17 +6,14 @@
  */
 
 import { useTranslation } from 'react-i18next'
-import { Shield, Lock, Unlock, EyeOff } from 'lucide-react'
+import { Shield, EyeOff } from 'lucide-react'
 import { useAIStore } from '@/features/ai/stores/aiStore'
-import { cn } from '@/utils/cn'
 
 export function SecurityBadge() {
   const { i18n } = useTranslation()
   const lang = i18n.language === 'es' ? 'es' : 'en'
 
   const privacyMode = useAIStore((s) => s.privacyMode)
-  const encryptionEnabled = useAIStore((s) => s.encryptionEnabled)
-  const isUnlocked = useAIStore((s) => s.isUnlocked)
 
   return (
     <div className="flex items-center gap-1 sm:gap-2">
@@ -29,34 +26,6 @@ export function SecurityBadge() {
           <EyeOff className="h-3 w-3" />
           <span className="hidden sm:inline">
             {lang === 'es' ? 'Privado' : 'Private'}
-          </span>
-        </div>
-      )}
-
-      {/* Encryption Status */}
-      {encryptionEnabled && (
-        <div
-          className={cn(
-            'flex items-center gap-1 px-2 py-1 rounded-md text-xs',
-            isUnlocked
-              ? 'bg-green-500/10 text-green-600 dark:text-green-400'
-              : 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400'
-          )}
-          title={
-            isUnlocked
-              ? (lang === 'es' ? 'Datos Encriptados - Desbloqueado' : 'Encrypted Data - Unlocked')
-              : (lang === 'es' ? 'Datos Encriptados - Bloqueado' : 'Encrypted Data - Locked')
-          }
-        >
-          {isUnlocked ? (
-            <Unlock className="h-3 w-3" />
-          ) : (
-            <Lock className="h-3 w-3" />
-          )}
-          <span className="hidden sm:inline">
-            {isUnlocked
-              ? (lang === 'es' ? 'Desbloqueado' : 'Unlocked')
-              : (lang === 'es' ? 'Bloqueado' : 'Locked')}
           </span>
         </div>
       )}

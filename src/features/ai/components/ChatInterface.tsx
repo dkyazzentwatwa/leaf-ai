@@ -863,6 +863,7 @@ export function ChatInterface({
           )}
           <button
             onClick={handleNewConversation}
+            data-testid="new-conversation"
             className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-muted transition-colors"
             title={lang === 'es' ? 'Nueva conversación' : 'New conversation'}
           >
@@ -999,6 +1000,8 @@ export function ChatInterface({
             return (
               <div
                 key={index}
+                data-message-role={message.role}
+                data-testid={message.role === 'assistant' ? 'assistant-message' : 'user-message'}
                 className={cn(
                   'flex gap-2 sm:gap-3',
                   isUser ? 'justify-end' : 'justify-start'
@@ -1186,6 +1189,7 @@ export function ChatInterface({
         />
         <div className="flex gap-1.5 sm:gap-2">
           <textarea
+            data-testid="chat-input"
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -1199,6 +1203,7 @@ export function ChatInterface({
           {isGenerating ? (
             <button
               type="button"
+              data-testid="stop-generation"
               onClick={stopGeneration}
               className="px-3 sm:px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:text-foreground hover:bg-muted/80 transition-colors flex-shrink-0"
             >
@@ -1207,6 +1212,7 @@ export function ChatInterface({
           ) : (
             <button
               type="submit"
+              data-testid="send-message"
               disabled={!input.trim()}
               className="px-3 sm:px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
             >

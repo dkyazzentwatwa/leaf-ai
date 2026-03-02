@@ -8,7 +8,6 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { ModelId, ModelLoadProgress, ChatMessage } from '../services/webllm/engine'
 import type { AssistantType, Persona } from '../services/webllm/prompts'
-import { secureDeleteConversation } from '@/utils/secureDelete'
 
 export interface StoredMessage extends ChatMessage {
   id: string
@@ -324,11 +323,6 @@ export const useAIStore = create<AIState>()(
             conversations: remaining,
             activeConversationId: nextActive,
           }
-        })
-
-        // Securely delete conversation from IndexedDB
-        secureDeleteConversation(id).catch((error) => {
-          console.error('Failed to securely delete conversation:', error)
         })
       },
 

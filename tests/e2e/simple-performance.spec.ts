@@ -29,10 +29,8 @@ test.describe('Simple Performance Test', () => {
     // Wait for page to load
     await page.waitForLoadState('networkidle')
 
-    // Check if model downloader is visible (no model ready)
-    const hasModelDownloader = await page.locator('text=/Select Model|Download an AI model/i').isVisible()
-
-    if (hasModelDownloader) {
+    const chatInput = page.locator('[data-testid="chat-input"]').first()
+    if (!(await chatInput.isVisible().catch(() => false))) {
       console.log('❌ No model is downloaded. Please:')
       console.log('   1. Visit http://localhost:5173')
       console.log('   2. Download a model (e.g., Llama 3.2 1B)')
@@ -50,23 +48,19 @@ test.describe('Simple Performance Test', () => {
     for (let i = 0; i < 3; i++) {
       console.log(`\nMeasurement ${i + 1}/3`)
 
-      // Find the textarea input
-      const input = page.locator('textarea').first()
-      await expect(input).toBeVisible({ timeout: 10000 })
-
       // Type a test prompt
-      await input.fill('What is 2+2?')
+      await expect(chatInput).toBeVisible({ timeout: 10000 })
+      await chatInput.fill('What is 2+2?')
 
       // Measure time to first token
       const startTime = Date.now()
 
       // Click send button
-      const sendButton = page.locator('button[type="submit"]').first()
+      const sendButton = page.locator('[data-testid="send-message"]').first()
       await sendButton.click()
 
       // Wait for AI response to start appearing
-      // Look for the assistant message container
-      await page.waitForSelector('[data-message-role="assistant"]', { timeout: 30000 })
+      await page.waitForSelector('[data-testid="assistant-message"]', { timeout: 30000 })
 
       const firstTokenTime = Date.now()
       const ttft = firstTokenTime - startTime
@@ -75,6 +69,7 @@ test.describe('Simple Performance Test', () => {
       console.log(`  TTFT: ${ttft}ms`)
 
       // Wait for generation to complete (send button re-enabled)
+      await expect(sendButton).toBeVisible({ timeout: 60000 })
       await expect(sendButton).toBeEnabled({ timeout: 60000 })
       console.log(`  Generation complete`)
 
@@ -82,7 +77,7 @@ test.describe('Simple Performance Test', () => {
       await page.waitForTimeout(2000)
 
       // Start new conversation for next test
-      const newChatButton = page.locator('button:has-text("New Chat")').first()
+      const newChatButton = page.locator('[data-testid="new-conversation"]').first()
       if (await newChatButton.isVisible()) {
         await newChatButton.click()
         await page.waitForTimeout(1000)
@@ -109,9 +104,8 @@ test.describe('Simple Performance Test', () => {
     await page.goto('/')
     await page.waitForLoadState('networkidle')
 
-    // Check if model is ready
-    const hasModelDownloader = await page.locator('text=/Select Model|Download an AI model/i').isVisible()
-    if (hasModelDownloader) {
+    const chatInput = page.locator('[data-testid="chat-input"]').first()
+    if (!(await chatInput.isVisible().catch(() => false))) {
       test.skip(true, 'No model downloaded')
       return
     }
@@ -119,19 +113,17 @@ test.describe('Simple Performance Test', () => {
     console.log('✓ Model is ready')
     console.log('\n=== Throughput Test ===')
 
-    // Find the textarea input
-    const input = page.locator('textarea').first()
-    await expect(input).toBeVisible({ timeout: 10000 })
-
     // Type a longer prompt
-    await input.fill('Explain machine learning in 2-3 sentences.')
+    await expect(chatInput).toBeVisible({ timeout: 10000 })
+    await chatInput.fill('Explain machine learning in 2-3 sentences.')
 
     // Click send and measure total generation time
     const startTime = Date.now()
-    const sendButton = page.locator('button[type="submit"]').first()
+    const sendButton = page.locator('[data-testid="send-message"]').first()
     await sendButton.click()
 
     // Wait for generation to complete
+    await expect(sendButton).toBeVisible({ timeout: 120000 })
     await expect(sendButton).toBeEnabled({ timeout: 120000 })
     const endTime = Date.now()
 

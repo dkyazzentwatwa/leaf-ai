@@ -16,7 +16,8 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { useWebLLM } from '../hooks/useWebLLM'
-import { AVAILABLE_MODELS, type ModelId } from '../services/webllm/engine'
+import { AVAILABLE_MODELS, type ModelId, type ModelInfo } from '../services/webllm/engine'
+import { detectBasicDeviceCapabilities, type Platform, type DeviceTier } from '../services/webllm/deviceCapabilities'
 import { unifiedEngine } from '../services/unifiedEngine'
 import { useAIStore } from '../stores/aiStore'
 import { cn } from '@/utils/cn'
@@ -44,9 +45,6 @@ const identifyModel = (cacheName: string, urls: string[]): ModelId | null => {
   return null
 }
 
-type Platform = 'ios' | 'android' | 'desktop'
-type DeviceTier = 'low-end' | 'mid-range' | 'high-end'
-
 // Platform badge component
 function PlatformBadge({ tier }: { tier: string }) {
   const badges: Record<string, { label: string; color: string }> = {
@@ -70,7 +68,7 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
     name: string
     description: string
   } | null>(null)
-  const [availableModels, setAvailableModels] = useState<Record<string, any>>({})
+  const [availableModels, setAvailableModels] = useState<Partial<Record<ModelId, ModelInfo>>>({})
   const [isIOS, setIsIOS] = useState(false)
   const [platform, setPlatform] = useState<Platform>('desktop')
   const [deviceTier, setDeviceTier] = useState<DeviceTier>('high-end')
@@ -127,44 +125,14 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
     unifiedEngine.detectEngine().then((info) => {
       setEngineInfo(info)
 
-      // Detect platform (iOS/Android/Desktop)
-      const ua = navigator.userAgent
-      const isIOSDevice = /iPad|iPhone|iPod/.test(ua) ||
-        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+      const capabilities = detectBasicDeviceCapabilities(navigator)
+      const detectedPlatform = capabilities.platform as Platform
+      const tier = capabilities.deviceTier as DeviceTier
+      const ram = capabilities.estimatedRAM
 
-      setIsIOS(isIOSDevice)
-
-      // Determine platform
-      const detectedPlatform: Platform = isIOSDevice ? 'ios' : (ua.includes('Android') ? 'android' : 'desktop')
+      setIsIOS(detectedPlatform === 'ios')
       setPlatform(detectedPlatform)
-
-      // Detect RAM and device tier
-      const actualRAM = (navigator as any).deviceMemory || null
-      let ram = 8 // Default
-
-      if (actualRAM !== null) {
-        ram = actualRAM
-      } else if (isIOSDevice) {
-        ram = 6
-      } else if (ua.includes('Android')) {
-        // Android heuristics based on screen resolution
-        const screen = window.screen
-        const width = Math.max(screen.width, screen.height)
-        const height = Math.min(screen.width, screen.height)
-
-        if (width >= 1440 || height >= 1440) {
-          ram = 6 // Flagship
-        } else if (width >= 1080 || height >= 1080) {
-          ram = 5 // Mid-range
-        } else {
-          ram = 3 // Low-end
-        }
-      }
-
       setEstimatedRAM(ram)
-
-      // Classify device tier
-      const tier: DeviceTier = ram < 4 ? 'low-end' : ram < 8 ? 'mid-range' : 'high-end'
       setDeviceTier(tier)
 
       console.log('[ModelDownloader] Device detection:', { platform: detectedPlatform, tier, ram })
@@ -190,12 +158,12 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
           // Desktop sees desktop + android tiers
           return modelInfo.platformTier !== 'ios'
         })
-      )
+      ) as Partial<Record<ModelId, ModelInfo>>
 
       setAvailableModels(filtered)
 
       // Set default model based on platform
-      if (isIOSDevice && Object.keys(filtered).length > 0) {
+      if (detectedPlatform === 'ios' && Object.keys(filtered).length > 0) {
         const firstIOSModel = Object.keys(filtered)[0] as ModelId
         // Only update if current preferred model is not iOS-compatible
         const currentModelInfo = AVAILABLE_MODELS[preferredModel as ModelId]
@@ -398,7 +366,7 @@ export function ModelDownloader({ onModelReady, compact = false }: ModelDownload
       <div className="space-y-4">
         <h3 className="text-base font-semibold">Select AI Model</h3>
         <div className="space-y-3">
-          {(Object.entries(availableModels) as [ModelId, any][]).map(
+          {(Object.entries(availableModels) as [ModelId, ModelInfo][]).map(
             ([id, info]) => (
               <label
                 key={id}

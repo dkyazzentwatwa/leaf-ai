@@ -55,7 +55,11 @@ export function useWebLLM(options: UseWebLLMOptions = {}) {
    */
   const checkSupport = useCallback(async () => {
     const engineInfo = await unifiedEngine.detectEngine()
-    return { supported: true, engine: engineInfo.type }
+    return {
+      supported: engineInfo.supported,
+      engine: engineInfo.type,
+      error: engineInfo.supported ? undefined : engineInfo.description,
+    }
   }, [])
 
   /**

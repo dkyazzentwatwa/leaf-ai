@@ -319,7 +319,7 @@ function generateRandomObject(obj: any): any {
 export async function secureDeleteConversation(conversationId: string): Promise<void> {
   // Delete from main database
   try {
-    await secureDeleteIndexedDB('leaf-ai-db', 'aiConversations', conversationId)
+    await secureDeleteIndexedDB('LeafAIDB', 'aiConversations', conversationId)
   } catch (error) {
     console.error('Failed to securely delete conversation:', error)
     // Rethrow to let caller handle
